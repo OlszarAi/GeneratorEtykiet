@@ -56,6 +56,9 @@ export function GeneratedLabels({
           elements: updatedLabel.elements,
           size: updatedLabel.size,
           companyName: updatedLabel.companyName,
+          text: updatedLabel.text,
+          prefix: updatedLabel.prefix,
+          shortUuid: updatedLabel.shortUuid.substring(0, updatedLabel.shortUuid.length),
           productName: label.productName
         };
       }
@@ -157,6 +160,78 @@ export function GeneratedLabels({
     }
   };
 
+  const handleUpdateCompanyName = (companyName: string) => {
+    if (editingState.editingAll) {
+      const newLabels = labels.map(label => ({
+        ...label,
+        companyName
+      }));
+      onUpdateLabels(newLabels);
+    } else if (editingState.selectedLabels.length > 0) {
+      const newLabels = labels.map(label => 
+        editingState.selectedLabels.includes(label.id) ? {
+          ...label,
+          companyName
+        } : label
+      );
+      onUpdateLabels(newLabels);
+    }
+  };
+
+  const handleUpdateText = (text: string) => {
+    if (editingState.editingAll) {
+      const newLabels = labels.map(label => ({
+        ...label,
+        text
+      }));
+      onUpdateLabels(newLabels);
+    } else if (editingState.selectedLabels.length > 0) {
+      const newLabels = labels.map(label => 
+        editingState.selectedLabels.includes(label.id) ? {
+          ...label,
+          text
+        } : label
+      );
+      onUpdateLabels(newLabels);
+    }
+  };
+
+  const handleUpdatePrefix = (prefix: string) => {
+    if (editingState.editingAll) {
+      const newLabels = labels.map(label => ({
+        ...label,
+        prefix
+      }));
+      onUpdateLabels(newLabels);
+    } else if (editingState.selectedLabels.length > 0) {
+      const newLabels = labels.map(label => 
+        editingState.selectedLabels.includes(label.id) ? {
+          ...label,
+          prefix
+        } : label
+      );
+      onUpdateLabels(newLabels);
+    }
+  };
+
+  const handleUpdateUuidLength = (length: number) => {
+    if (editingState.editingAll) {
+      const newLabels = labels.map(label => ({
+        ...label,
+        shortUuid: label.uuid.substring(0, length)
+      }));
+      onUpdateLabels(newLabels);
+    } else if (editingState.selectedLabels.length > 0) {
+      const newLabels = labels.map(label => 
+        editingState.selectedLabels.includes(label.id) ? {
+          ...label,
+          shortUuid: label.uuid.substring(0, length)
+        } : label
+      );
+      onUpdateLabels(newLabels);
+    }
+  };
+
   const filteredLabels = searchTerm
     ? labels.filter(label => 
         label.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -165,16 +240,16 @@ export function GeneratedLabels({
     : labels;
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-900 rounded-xl shadow-xl overflow-hidden border border-gray-800">
+    <div className="generated-labels">
+      <div className="labels-container">
         {/* Header */}
-        <div className="p-6 border-b border-gray-800">
+        <div className="labels-header">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-white">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Generated Labels
               </h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-gray-800 text-gray-300 text-sm">
+              <span className="px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm">
                 {labels.length} labels
               </span>
             </div>
@@ -210,20 +285,20 @@ export function GeneratedLabels({
           {/* Search and Export Controls */}
           <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search labels..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full rounded-lg bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
+                className="search-input"
               />
             </div>
             <div className="flex items-center gap-3">
               <select
                 value={pdfSettings.type}
                 onChange={(e) => handlePdfTypeChange(e.target.value as 'single' | 'multiple')}
-                className="rounded-lg bg-gray-800 border-gray-700 text-gray-200 focus:ring-blue-500 focus:border-blue-500"
+                className="dropdown-select"
               >
                 <option value="single">One Label per Page</option>
                 <option value="multiple">Multiple Labels per Page</option>
@@ -249,18 +324,18 @@ export function GeneratedLabels({
         </div>
 
         {/* Labels Grid */}
-        <div className="p-6 bg-gray-950">
+        <div className="labels-grid">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredLabels.map((label) => (
               <div 
                 key={label.id} 
-                className={`bg-gray-900 rounded-lg overflow-hidden transition-all hover:scale-[1.02] ${
+                className={`label-card ${
                   editingState.selectedLabels.includes(label.id) 
-                    ? 'ring-2 ring-blue-500' 
-                    : 'hover:ring-1 hover:ring-gray-700'
+                    ? 'label-card-selected' 
+                    : 'hover:ring-1 hover:ring-gray-200 dark:hover:ring-gray-700'
                 }`}
               >
-                <div className="p-4 border-b border-gray-800">
+                <div className="label-card-header">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <input
@@ -294,11 +369,11 @@ export function GeneratedLabels({
                     type="text"
                     value={label.productName}
                     onChange={(e) => handleLabelUpdate({ ...label, productName: e.target.value })}
-                    className="w-full rounded-lg bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
+                    className="label-input"
                     placeholder="Enter product name"
                   />
                 </div>
-                <div className="p-4 flex items-center justify-center bg-white dark:bg-gray-100 rounded-b-lg">
+                <div className="label-card-preview">
                   <div className="transform scale-[0.8]">
                     <LabelPreview label={label} />
                   </div>
@@ -309,10 +384,10 @@ export function GeneratedLabels({
             {/* Add New Label Button */}
             <button
               onClick={() => duplicateLabel(labels[0])}
-              className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-800 rounded-lg hover:border-blue-500 hover:bg-gray-900/50 transition-all group"
+              className="add-label-button"
             >
-              <Plus className="w-12 h-12 text-gray-700 group-hover:text-blue-500 mb-2 transition-colors" />
-              <span className="text-gray-500 group-hover:text-blue-500 transition-colors">Add New Label</span>
+              <Plus />
+              <span>Add New Label</span>
             </button>
           </div>
         </div>
@@ -321,7 +396,7 @@ export function GeneratedLabels({
       <div className="flex justify-between">
         <button
           onClick={onRestart}
-          className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          className="create-new-button"
         >
           Create New Labels
         </button>
@@ -334,6 +409,10 @@ export function GeneratedLabels({
           onUpdate={editingState.editingAll || editingState.selectedLabels.length > 1 ? 
             handleBulkUpdate : 
             handleLabelUpdate}
+          onUpdateCompanyName={handleUpdateCompanyName}
+          onUpdateText={handleUpdateText}
+          onUpdatePrefix={handleUpdatePrefix}
+          onUpdateUuidLength={handleUpdateUuidLength}
           onClose={stopEditing}
         />
       )}

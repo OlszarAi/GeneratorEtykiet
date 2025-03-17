@@ -1,13 +1,15 @@
 import React from 'react';
-import { QrCode, Building, Hash, Layers } from 'lucide-react';
+import { QrCode, Building, Hash, Layers, Type } from 'lucide-react';
 
 interface OtherSettingsFormProps {
   companyName: string;
+  text: string;
   prefix: string;
   uuidLength: number;
   quantity: number;
   previewShortUuid: string;
   onUpdateCompanyName: (name: string) => void;
+  onUpdateText: (text: string) => void;
   onUpdatePrefix: (prefix: string) => void;
   onUpdateUuidLength: (length: number) => void;
   onUpdateQuantity: (quantity: number) => void;
@@ -17,11 +19,13 @@ interface OtherSettingsFormProps {
 
 export function OtherSettingsForm({
   companyName,
+  text,
   prefix,
   uuidLength,
   quantity,
   previewShortUuid,
   onUpdateCompanyName,
+  onUpdateText,
   onUpdatePrefix,
   onUpdateUuidLength,
   onUpdateQuantity,
@@ -49,6 +53,24 @@ export function OtherSettingsForm({
               onChange={(e) => onUpdateCompanyName(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
               placeholder="Enter company name"
+            />
+          </div>
+        </div>
+
+        {/* Custom Text Section */}
+        <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
+          <h3 className="text-lg font-medium mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+            <Type className="w-5 h-5" />
+            Custom Text
+          </h3>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Text</label>
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => onUpdateText(e.target.value)}
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              placeholder="Enter custom text"
             />
           </div>
         </div>

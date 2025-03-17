@@ -1,0 +1,21 @@
+.label-preview {
+  @apply relative bg-white rounded-lg overflow-hidden
+         shadow-[0_0_0_1px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.1),0_6px_16px_rgba(0,0,0,0.1)]
+         dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_1px_3px_rgba(0,0,0,0.3),0_6px_16px_rgba(0,0,0,0.3)];
+}
+
+.label-preview-element {
+  @apply absolute font-bold text-gray-900;
+}
+
+.label-preview-text {
+  @apply whitespace-pre-wrap break-words;
+}
+
+.label-preview-qr {
+  @apply rounded-sm;
+}
+
+.label-preview-uuid {
+  @apply font-mono text-gray-600;
+}

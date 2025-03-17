@@ -36,6 +36,7 @@ export interface LabelElements {
   uuid: ElementStyle;
   companyName: ElementStyle & { textStyle: TextStyle };
   productName: ElementStyle & { textStyle: TextStyle };
+  text: ElementStyle & { textStyle: TextStyle };
 }
 
 export interface Label {
@@ -47,6 +48,7 @@ export interface Label {
   shortUuid: string;
   prefix: string;
   productName: string;
+  text: string;
 }
 
 export interface PageSettings {

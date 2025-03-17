@@ -18,7 +18,7 @@ function App() {
     unit: 'mm',
     padding: 5,
     elementSpacing: 1,
-    preventCollisions: true,
+    preventCollisions: false,
     border: {
       enabled: false,
       width: 0.3,
@@ -36,6 +36,16 @@ function App() {
       position: { x: 10, y: 35 }, 
       size: 12,
       enabled: true
+    },
+    text: {
+      position: { x: 10, y: 25 },
+      size: 14,
+      enabled: true,
+      textStyle: {
+        align: 'left',
+        multiline: false,
+        maxWidth: 80
+      }
     },
     companyName: { 
       position: { x: 10, y: 45 }, 
@@ -60,6 +70,7 @@ function App() {
   });
   
   const [companyName, setCompanyName] = useState('');
+  const [text, setText] = useState('');
   const [prefix, setPrefix] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [uuidLength, setUuidLength] = useState(8);
@@ -90,6 +101,7 @@ function App() {
         size: labelSize,
         elements,
         companyName,
+        text,
         uuid: fullUuid,
         shortUuid,
         prefix,
@@ -132,6 +144,7 @@ function App() {
                 size: labelSize,
                 elements,
                 companyName: companyName || 'Company Name',
+                text: text || 'Custom Text',
                 uuid: previewUuid,
                 shortUuid: previewShortUuid,
                 prefix,
@@ -142,6 +155,7 @@ function App() {
                 setLabelSize(updatedLabel.size);
               }}
               onUpdateCompanyName={setCompanyName}
+              onUpdateText={setText}
               onUpdatePrefix={setPrefix}
               onUpdateUuidLength={setUuidLength}
               onNext={() => setStep(3)}
@@ -152,11 +166,13 @@ function App() {
           {step === 3 && (
             <OtherSettingsForm
               companyName={companyName}
+              text={text}
               prefix={prefix}
               uuidLength={uuidLength}
               quantity={quantity}
               previewShortUuid={previewShortUuid}
               onUpdateCompanyName={setCompanyName}
+              onUpdateText={setText}
               onUpdatePrefix={setPrefix}
               onUpdateUuidLength={setUuidLength}
               onUpdateQuantity={setQuantity}

@@ -91,10 +91,11 @@ export function usePdfExport() {
               scale: 4
             });
 
-            // Create label element
+            // Create label element with proper font styles
             const labelDiv = await createLabelElement(label, scale, qrDataUrl);
             container.appendChild(labelDiv);
 
+            // Configure html2canvas for better text rendering
             const canvas = await html2canvas(labelDiv, {
               scale: 4,
               backgroundColor: 'white',
@@ -103,12 +104,32 @@ export function usePdfExport() {
               allowTaint: true,
               imageTimeout: 0,
               onclone: (clonedDoc) => {
-                const img = clonedDoc.querySelector('img');
-                if (img) {
-                  img.style.imageRendering = 'pixelated';
-                  img.style.transform = 'scale(1.0)';
-                  img.style.transformOrigin = 'top left';
-                }
+                const elements = clonedDoc.querySelectorAll('p, div');
+                elements.forEach(el => {
+                  if (el instanceof HTMLElement) {
+                    // Ensure font styles are explicitly set
+                    el.style.fontFamily = 'Arial, sans-serif';
+                    if (el.classList.contains('font-bold')) {
+                      el.style.fontWeight = '700';
+                    }
+                    // Preserve font size
+                    if (el.style.fontSize) {
+                      const size = parseFloat(el.style.fontSize);
+                      el.style.fontSize = `${size}px`;
+                    }
+                    // Ensure text alignment is preserved
+                    if (el.style.textAlign) {
+                      el.style.textAlign = el.style.textAlign;
+                    }
+                    // Preserve line breaks and wrapping
+                    if (el.style.whiteSpace) {
+                      el.style.whiteSpace = el.style.whiteSpace;
+                    }
+                    if (el.style.wordBreak) {
+                      el.style.wordBreak = el.style.wordBreak;
+                    }
+                  }
+                });
               }
             });
 
@@ -181,12 +202,32 @@ export function usePdfExport() {
           allowTaint: true,
           imageTimeout: 0,
           onclone: (clonedDoc) => {
-            const img = clonedDoc.querySelector('img');
-            if (img) {
-              img.style.imageRendering = 'pixelated';
-              img.style.transform = 'scale(1.0)';
-              img.style.transformOrigin = 'top left';
-            }
+            const elements = clonedDoc.querySelectorAll('p, div');
+            elements.forEach(el => {
+              if (el instanceof HTMLElement) {
+                // Ensure font styles are explicitly set
+                el.style.fontFamily = 'Arial, sans-serif';
+                if (el.classList.contains('font-bold')) {
+                  el.style.fontWeight = '700';
+                }
+                // Preserve font size
+                if (el.style.fontSize) {
+                  const size = parseFloat(el.style.fontSize);
+                  el.style.fontSize = `${size}px`;
+                }
+                // Ensure text alignment is preserved
+                if (el.style.textAlign) {
+                  el.style.textAlign = el.style.textAlign;
+                }
+                // Preserve line breaks and wrapping
+                if (el.style.whiteSpace) {
+                  el.style.whiteSpace = el.style.whiteSpace;
+                }
+                if (el.style.wordBreak) {
+                  el.style.wordBreak = el.style.wordBreak;
+                }
+              }
+            });
           }
         });
 

@@ -55,17 +55,39 @@ export function LabelPreview({ label }: LabelPreviewProps) {
           maxWidth: label.elements.companyName.textStyle.maxWidth ? 
             `${label.elements.companyName.textStyle.maxWidth * scale}px` : 
             undefined,
+          width: label.elements.companyName.textStyle.multiline ? 
+            `${(label.elements.companyName.textStyle.maxWidth || label.size.width - label.elements.companyName.position.x) * scale}px` : 
+            'auto',
           wordBreak: 'break-word',
           whiteSpace: label.elements.companyName.textStyle.multiline ? 'pre-wrap' : 'nowrap',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          textAlign: label.elements.companyName.textStyle.align
         }}>
-          <p 
-            className="font-bold text-gray-900 dark:text-gray-800"
-            style={{ 
-              textAlign: label.elements.companyName.textStyle.align,
-            }}
-          >
+          <p className="font-bold text-gray-900 dark:text-gray-800">
             {label.companyName}
+          </p>
+        </div>
+      )}
+
+      {label.elements.text.enabled && (
+        <div style={{
+          position: 'absolute',
+          left: `${label.elements.text.position.x * scale}px`,
+          top: `${label.elements.text.position.y * scale}px`,
+          fontSize: `${label.elements.text.size}px`,
+          maxWidth: label.elements.text.textStyle.maxWidth ? 
+            `${label.elements.text.textStyle.maxWidth * scale}px` : 
+            undefined,
+          width: label.elements.text.textStyle.multiline ? 
+            `${(label.elements.text.textStyle.maxWidth || label.size.width - label.elements.text.position.x) * scale}px` : 
+            'auto',
+          wordBreak: 'break-word',
+          whiteSpace: label.elements.text.textStyle.multiline ? 'pre-wrap' : 'nowrap',
+          overflow: 'hidden',
+          textAlign: label.elements.text.textStyle.align
+        }}>
+          <p className="font-bold text-gray-900 dark:text-gray-800">
+            {label.text}
           </p>
         </div>
       )}
@@ -79,16 +101,15 @@ export function LabelPreview({ label }: LabelPreviewProps) {
           maxWidth: label.elements.productName.textStyle.maxWidth ? 
             `${label.elements.productName.textStyle.maxWidth * scale}px` : 
             undefined,
+          width: label.elements.productName.textStyle.multiline ? 
+            `${(label.elements.productName.textStyle.maxWidth || label.size.width - label.elements.productName.position.x) * scale}px` : 
+            'auto',
           wordBreak: 'break-word',
           whiteSpace: label.elements.productName.textStyle.multiline ? 'pre-wrap' : 'nowrap',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          textAlign: label.elements.productName.textStyle.align
         }}>
-          <p 
-            className="font-bold text-gray-900 dark:text-gray-800"
-            style={{ 
-              textAlign: label.elements.productName.textStyle.align,
-            }}
-          >
+          <p className="font-bold text-gray-900 dark:text-gray-800">
             {label.productName}
           </p>
         </div>

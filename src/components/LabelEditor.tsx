@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode.react';
-import { Move, QrCode, Type, Building, Package, Settings } from 'lucide-react';
+import { Move, QrCode, Type, Building, Package, Settings, Text } from 'lucide-react';
 import type { Label, LabelElements, ElementStyle, Position, TextStyle, ElementValidation, ValidationError } from '../types';
 import { getScaleFactor, constrainPosition, findNonOverlappingPosition } from '../utils';
 
@@ -8,6 +8,7 @@ interface LabelEditorProps {
   label: Label;
   onUpdate: (updatedLabel: Label) => void;
   onUpdateCompanyName?: (name: string) => void;
+  onUpdateText?: (text: string) => void;
   onUpdatePrefix?: (prefix: string) => void;
   onUpdateUuidLength?: (length: number) => void;
   onClose?: () => void;
@@ -33,6 +34,7 @@ export function LabelEditor({
   label, 
   onUpdate,
   onUpdateCompanyName,
+  onUpdateText,
   onUpdatePrefix,
   onUpdateUuidLength,
   onClose,
@@ -47,7 +49,8 @@ export function LabelEditor({
     qrCode: { position: { x: null, y: null }, size: null },
     uuid: { position: { x: null, y: null }, size: null },
     companyName: { position: { x: null, y: null }, size: null },
-    productName: { position: { x: null, y: null }, size: null }
+    productName: { position: { x: null, y: null }, size: null },
+    text: { position: { x: null, y: null }, size: null }
   });
 
   const [positionInputs, setPositionInputs] = useState<PositionInputs>(() => {
@@ -253,7 +256,7 @@ export function LabelEditor({
     setShowSaveCancel(true);
   };
 
-  const updateTextStyle = (element: 'companyName' | 'productName', textStyle: Partial<TextStyle>) => {
+  const updateTextStyle = (element: 'companyName' | 'productName' | 'text', textStyle: Partial<TextStyle>) => {
     const updatedElements = { ...elements };
     updatedElements[element] = {
       ...updatedElements[element],
@@ -437,10 +440,8 @@ export function LabelEditor({
                   onChange={(e) => handlePositionInputChange(e.target.value, element, 'x')}
                   onBlur={() => handlePositionInputBlur(element, 'x')}
                   step="0.01"
-                  className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 ${
-                    validation[element].position.x
-                      ? 'border-red-500 focus:border-red-500'
-                      : 'border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white'
+                  className={`mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 ${
+                    validation[element].position.x ? 'border-red-500' : ''
                   }`}
                 />
               </div>
@@ -459,10 +460,8 @@ export function LabelEditor({
                   onChange={(e) => handlePositionInputChange(e.target.value, element, 'y')}
                   onBlur={() => handlePositionInputBlur(element, 'y')}
                   step="0.01"
-                  className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 ${
-                    validation[element].position.y
-                      ? 'border-red-500 focus:border-red-500'
-                      : 'border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white'
+                  className={`mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 ${
+                    validation[element].position.y ? 'border-red-500' : ''
                   }`}
                 />
               </div>
@@ -480,10 +479,8 @@ export function LabelEditor({
                 type="number"
                 value={elementStyle.size}
                 onChange={(e) => handleSizeInputChange(e.target.value, element)}
-                className={`mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 ${
-                  validation[element].size
-                    ? 'border-red-500 focus:border-red-500'
-                    : 'border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:bg-gray-700 dark:text-white'
+                className={`mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 ${
+                  validation[element].size ? 'border-red-500' : ''
                 }`}
               />
             </div>
@@ -493,10 +490,10 @@ export function LabelEditor({
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Text Alignment</label>
                   <select
                     value={elementStyle.textStyle.align}
-                    onChange={(e) => updateTextStyle(element as 'companyName' | 'productName', { 
+                    onChange={(e) => updateTextStyle(element as 'companyName' | 'productName' | 'text', { 
                       align: e.target.value as TextStyle['align']
                     })}
-                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                   >
                     <option value="left">Left</option>
                     <option value="center">Center</option>
@@ -508,7 +505,7 @@ export function LabelEditor({
                     <input
                       type="checkbox"
                       checked={elementStyle.textStyle.multiline}
-                      onChange={(e) => updateTextStyle(element as 'companyName' | 'productName', { 
+                      onChange={(e) => updateTextStyle(element as 'companyName' | 'productName' | 'text', { 
                         multiline: e.target.checked
                       })}
                       className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 dark:bg-gray-700"
@@ -522,10 +519,10 @@ export function LabelEditor({
                     <input
                       type="number"
                       value={elementStyle.textStyle.maxWidth || elementStyle.width || elementStyle.size}
-                      onChange={(e) => updateTextStyle(element as 'companyName' | 'productName', { 
+                      onChange={(e) => updateTextStyle(element as 'companyName' | 'productName' | 'text', { 
                         maxWidth: Number(e.target.value)
                       })}
-                      className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                     />
                   </div>
                 )}
@@ -539,7 +536,7 @@ export function LabelEditor({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl w-[1200px] h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl w-[1000px] h-[90vh] flex flex-col">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Label</h2>
           <div className="flex items-center gap-4">
@@ -576,8 +573,8 @@ export function LabelEditor({
           </div>
         </div>
 
-        <div className="flex gap-8 flex-1 min-h-0">
-          <div className="w-[400px] flex flex-col">
+        <div className="flex gap-6 flex-1 min-h-0">
+          <div className="w-[500px] flex flex-col">
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg flex-1 flex flex-col">
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Preview</h3>
               <div className="flex-1 flex items-center justify-center">
@@ -591,6 +588,7 @@ export function LabelEditor({
                     width: `${label.size.width * scale}px`,
                     height: `${label.size.height * scale}px`
                   }}
+                  onClick={() => setSelectedElement(null)}
                 >
                   {renderElement(
                     'qrCode',
@@ -602,6 +600,22 @@ export function LabelEditor({
                     'uuid',
                     <p className="text-gray-600">{label.shortUuid}</p>,
                     { fontSize: `${elements.uuid.size}px` }
+                  )}
+                  
+                  {renderElement(
+                    'text',
+                    <p 
+                      className="font-bold whitespace-pre-wrap"
+                      style={{ 
+                        textAlign: elements.text.textStyle.align,
+                        maxWidth: elements.text.textStyle.maxWidth ? 
+                          `${elements.text.textStyle.maxWidth * scale}px` : 
+                          undefined
+                      }}
+                    >
+                      {label.text}
+                    </p>,
+                    { fontSize: `${elements.text.size}px` }
                   )}
                   
                   {renderElement(
@@ -640,142 +654,173 @@ export function LabelEditor({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
-            {activeTab === 'layout' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Border Padding ({label.size.unit})
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={padding}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value === '' || !isNaN(parseFloat(value))) {
-                            setPadding(value === '' ? 0 : parseFloat(value));
-                            setShowSaveCancel(true);
-                          }
-                        }}
-                        min={0}
-                        step="0.1"
-                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                      />
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={padding === 0}
-                          onChange={(e) => {
-                            setPadding(e.target.checked ? 0 : 1);
-                            setShowSaveCancel(true);
-                          }}
-                          className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 dark:bg-gray-700"
-                        />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Disable</span>
+          <div className="w-[400px] overflow-y-auto pr-2" style={{ marginRight: '-0.5rem' }}>
+            <div className="space-y-4 pr-2">
+              {activeTab === 'layout' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Border Padding ({label.size.unit})
                       </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={padding}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || !isNaN(parseFloat(value))) {
+                              setPadding(value === '' ? 0 : parseFloat(value));
+                              setShowSaveCancel(true);
+                            }
+                          }}
+                          min={0}
+                          step="0.1"
+                          className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                        />
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={padding === 0}
+                            onChange={(e) => {
+                              setPadding(e.target.checked ? 0 : 1);
+                              setShowSaveCancel(true);
+                            }}
+                            className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 dark:bg-gray-700"
+                          />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Disable</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Element Spacing ({label.size.unit})
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={elementSpacing}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || !isNaN(parseFloat(value))) {
+                              setElementSpacing(value === '' ? 0 : parseFloat(value));
+                              setShowSaveCancel(true);
+                            }
+                          }}
+                          min={0}
+                          step="0.1"
+                          className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                        />
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={elementSpacing === 0}
+                            onChange={(e) => {
+                              setElementSpacing(e.target.checked ? 0 : 1);
+                              setShowSaveCancel(true);
+                            }}
+                            className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 dark:bg-gray-700"
+                          />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Disable</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Element Spacing ({label.size.unit})
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={elementSpacing}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value === '' || !isNaN(parseFloat(value))) {
-                            setElementSpacing(value === '' ? 0 : parseFloat(value));
-                            setShowSaveCancel(true);
-                          }
-                        }}
-                        min={0}
-                        step="0.1"
-                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                      />
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={elementSpacing === 0}
-                          onChange={(e) => {
-                            setElementSpacing(e.target.checked ? 0 : 1);
-                            setShowSaveCancel(true);
-                          }}
-                          className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 dark:bg-gray-700"
-                        />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Disable</span>
-                      </label>
-                    </div>
-                  </div>
+
+                  <ElementControls 
+                    element="qrCode" 
+                    icon={<QrCode className="w-5 h-5" />} 
+                    label="QR Code" 
+                  />
+                  <ElementControls 
+                    element="uuid" 
+                    icon={<Type className="w-5 h-5" />} 
+                    label="UUID Text" 
+                  />
+                  <ElementControls 
+                    element="text" 
+                    icon={<Text className="w-5 h-5" />} 
+                    label="Custom Text" 
+                    showTextControls
+                  />
+                  <ElementControls 
+                    element="companyName" 
+                    icon={<Building className="w-5 h-5" />} 
+                    label="Company Name" 
+                    showTextControls
+                  />
+                  <ElementControls 
+                    element="productName" 
+                    icon={<Package className="w-5 h-5" />} 
+                    label="Product Name" 
+                    showTextControls
+                  />
                 </div>
+              )}
 
-                <ElementControls 
-                  element="qrCode" 
-                  icon={<QrCode className="w-5 h-5" />} 
-                  label="QR Code" 
-                />
-                <ElementControls 
-                  element="uuid" 
-                  icon={<Type className="w-5 h-5" />} 
-                  label="UUID Text" 
-                />
-                <ElementControls 
-                  element="companyName" 
-                  icon={<Building className="w-5 h-5" />} 
-                  label="Company Name" 
-                  showTextControls
-                />
-                <ElementControls 
-                  element="productName" 
-                  icon={<Package className="w-5 h-5" />} 
-                  label="Product Name" 
-                  showTextControls
-                />
-              </div>
-            )}
-
-            {activeTab === 'settings' && (
-              <div className="space-y-6">
-                {onUpdateCompanyName && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Company Name</label>
-                    <input
-                      type="text"
-                      value={label.companyName}
-                      onChange={(e) => onUpdateCompanyName(e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-                )}
-                {onUpdatePrefix && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">UUID Prefix</label>
-                    <input
-                      type="text"
-                      value={label.prefix}
-                      onChange={(e) => onUpdatePrefix(e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-                )}
-                {onUpdateUuidLength && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">UUID Length</label>
-                    <input
-                      type="number"
-                      value={label.shortUuid.length}
-                      onChange={(e)=> onUpdateUuidLength(Number(e.target.value))}
-                      min={4}
-                      max={32}
-                      className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+              {activeTab === 'settings' && (
+                <div className="space-y-6">
+                  {onUpdateCompanyName && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Company Name</label>
+                      <input
+                        type="text"
+                        value={label.companyName}
+                        onChange={(e) => {
+                          onUpdateCompanyName(e.target.value);
+                          setShowSaveCancel(true);
+                        }}
+                        className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                      />
+                    </div>
+                  )}
+                  {onUpdateText && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Custom Text</label>
+                      <input
+                        type="text"
+                        value={label.text}
+                        onChange={(e) => {
+                          onUpdateText(e.target.value);
+                          setShowSaveCancel(true);
+                        }}
+                        className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                      />
+                    </div>
+                  )}
+                  {onUpdatePrefix && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">UUID Prefix</label>
+                      <input
+                        type="text"
+                        value={label.prefix}
+                        onChange={(e) => {
+                          onUpdatePrefix(e.target.value);
+                          setShowSaveCancel(true);
+                        }}
+                        className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                      />
+                    </div>
+                  )}
+                  {onUpdateUuidLength && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">UUID Length</label>
+                      <input
+                        type="number"
+                        value={label.shortUuid.length}
+                        onChange={(e) => {
+                          onUpdateUuidLength(parseInt(e.target.value));
+                          setShowSaveCancel(true);
+                        }}
+                        min={4}
+                        max={36}
+                        className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -791,7 +836,7 @@ export function LabelEditor({
             )}
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700"
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
             >
               {showNextButton ? 'Next' : 'Save'}
             </button>
