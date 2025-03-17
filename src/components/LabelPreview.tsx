@@ -12,7 +12,7 @@ export function LabelPreview({ label }: LabelPreviewProps) {
   
   return (
     <div 
-      className="relative bg-white rounded-lg shadow-[0_0_0_1px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.1),0_6px_16px_rgba(0,0,0,0.1)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_1px_3px_rgba(0,0,0,0.3),0_6px_16px_rgba(0,0,0,0.3)]" 
+      className="relative bg-white rounded-lg overflow-hidden shadow-[0_0_0_1px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.1),0_6px_16px_rgba(0,0,0,0.1)]" 
       style={{
         width: `${label.size.width * scale}px`,
         height: `${label.size.height * scale}px`,
@@ -30,6 +30,7 @@ export function LabelPreview({ label }: LabelPreviewProps) {
           <QRCode 
             value={`${label.prefix}${label.uuid}`} 
             size={label.elements.qrCode.size}
+            fgColor={label.elements.qrCode.color || '#000000'}
             className="rounded-sm"
           />
         </div>
@@ -40,32 +41,10 @@ export function LabelPreview({ label }: LabelPreviewProps) {
           position: 'absolute',
           left: `${label.elements.uuid.position.x * scale}px`,
           top: `${label.elements.uuid.position.y * scale}px`,
-          fontSize: `${label.elements.uuid.size}px`
+          fontSize: `${label.elements.uuid.size}px`,
+          color: label.elements.uuid.color || '#000000'
         }}>
-          <p className="text-gray-600 dark:text-gray-400 font-mono">{label.shortUuid}</p>
-        </div>
-      )}
-      
-      {label.elements.companyName.enabled && (
-        <div style={{
-          position: 'absolute',
-          left: `${label.elements.companyName.position.x * scale}px`,
-          top: `${label.elements.companyName.position.y * scale}px`,
-          fontSize: `${label.elements.companyName.size}px`,
-          maxWidth: label.elements.companyName.textStyle.maxWidth ? 
-            `${label.elements.companyName.textStyle.maxWidth * scale}px` : 
-            undefined,
-          width: label.elements.companyName.textStyle.multiline ? 
-            `${(label.elements.companyName.textStyle.maxWidth || label.size.width - label.elements.companyName.position.x) * scale}px` : 
-            'auto',
-          wordBreak: 'break-word',
-          whiteSpace: label.elements.companyName.textStyle.multiline ? 'pre-wrap' : 'nowrap',
-          overflow: 'hidden',
-          textAlign: label.elements.companyName.textStyle.align
-        }}>
-          <p className="font-bold text-gray-900 dark:text-gray-800">
-            {label.companyName}
-          </p>
+          <p className="font-mono">{label.shortUuid}</p>
         </div>
       )}
 
@@ -84,11 +63,32 @@ export function LabelPreview({ label }: LabelPreviewProps) {
           wordBreak: 'break-word',
           whiteSpace: label.elements.text.textStyle.multiline ? 'pre-wrap' : 'nowrap',
           overflow: 'hidden',
-          textAlign: label.elements.text.textStyle.align
+          textAlign: label.elements.text.textStyle.align,
+          color: label.elements.text.textStyle.color || '#000000'
         }}>
-          <p className="font-bold text-gray-900 dark:text-gray-800">
-            {label.text}
-          </p>
+          <p className="font-bold">{label.text}</p>
+        </div>
+      )}
+      
+      {label.elements.companyName.enabled && (
+        <div style={{
+          position: 'absolute',
+          left: `${label.elements.companyName.position.x * scale}px`,
+          top: `${label.elements.companyName.position.y * scale}px`,
+          fontSize: `${label.elements.companyName.size}px`,
+          maxWidth: label.elements.companyName.textStyle.maxWidth ? 
+            `${label.elements.companyName.textStyle.maxWidth * scale}px` : 
+            undefined,
+          width: label.elements.companyName.textStyle.multiline ? 
+            `${(label.elements.companyName.textStyle.maxWidth || label.size.width - label.elements.companyName.position.x) * scale}px` : 
+            'auto',
+          wordBreak: 'break-word',
+          whiteSpace: label.elements.companyName.textStyle.multiline ? 'pre-wrap' : 'nowrap',
+          overflow: 'hidden',
+          textAlign: label.elements.companyName.textStyle.align,
+          color: label.elements.companyName.textStyle.color || '#000000'
+        }}>
+          <p className="font-bold">{label.companyName}</p>
         </div>
       )}
       
@@ -107,11 +107,10 @@ export function LabelPreview({ label }: LabelPreviewProps) {
           wordBreak: 'break-word',
           whiteSpace: label.elements.productName.textStyle.multiline ? 'pre-wrap' : 'nowrap',
           overflow: 'hidden',
-          textAlign: label.elements.productName.textStyle.align
+          textAlign: label.elements.productName.textStyle.align,
+          color: label.elements.productName.textStyle.color || '#000000'
         }}>
-          <p className="font-bold text-gray-900 dark:text-gray-800">
-            {label.productName}
-          </p>
+          <p className="font-bold">{label.productName}</p>
         </div>
       )}
     </div>

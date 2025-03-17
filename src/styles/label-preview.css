@@ -5,11 +5,11 @@
 }
 
 .label-preview-element {
-  @apply absolute font-bold text-gray-900;
+  @apply absolute font-bold text-gray-900 dark:text-gray-900;
 }
 
 .label-preview-text {
-  @apply whitespace-pre-wrap break-words;
+  @apply whitespace-pre-wrap break-words text-gray-900 dark:text-gray-900;
 }
 
 .label-preview-qr {
@@ -17,5 +17,5 @@
 }
 
 .label-preview-uuid {
-  @apply font-mono text-gray-600;
+  @apply font-mono text-gray-600 dark:text-gray-600;
 }

@@ -7,6 +7,10 @@ export interface TextStyle {
   align: 'left' | 'center' | 'right';
   multiline: boolean;
   maxWidth?: number;
+  color: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
 }
 
 export interface ElementStyle {
@@ -15,6 +19,7 @@ export interface ElementStyle {
   width?: number;
   textStyle?: TextStyle;
   enabled: boolean;
+  color?: string;
 }
 
 export interface LabelSize {

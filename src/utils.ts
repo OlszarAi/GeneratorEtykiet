@@ -242,6 +242,7 @@ export const createLabelElement = async (
     container.style.padding = '0';
     
     if (element.textStyle) {
+      container.style.color = element.textStyle.color || '#000000';
       if (element.textStyle.multiline && element.textStyle.maxWidth) {
         container.style.width = `${element.textStyle.maxWidth * scale}px`;
         container.style.whiteSpace = 'pre-wrap';
@@ -267,7 +268,7 @@ export const createLabelElement = async (
     return { wrapper, container };
   };
 
-  if (qrDataUrl) {
+  if (label.elements.qrCode.enabled && qrDataUrl) {
     const qrContainer = document.createElement('div');
     qrContainer.style.position = 'absolute';
     qrContainer.style.left = `${label.elements.qrCode.position.x * scale}px`;
@@ -287,17 +288,30 @@ export const createLabelElement = async (
     labelDiv.appendChild(qrContainer);
   }
 
-  const { wrapper: uuidWrapper, container: uuidContainer } = createTextContainer(label.elements.uuid);
-  uuidContainer.textContent = label.shortUuid;
-  labelDiv.appendChild(uuidWrapper);
+  if (label.elements.uuid.enabled) {
+    const { wrapper: uuidWrapper, container: uuidContainer } = createTextContainer(label.elements.uuid);
+    uuidContainer.textContent = label.shortUuid;
+    uuidContainer.style.color = label.elements.uuid.color || '#000000';
+    labelDiv.appendChild(uuidWrapper);
+  }
 
-  const { wrapper: companyWrapper, container: companyContainer } = createTextContainer(label.elements.companyName);
-  companyContainer.textContent = label.companyName;
-  labelDiv.appendChild(companyWrapper);
+  if (label.elements.text.enabled) {
+    const { wrapper: textWrapper, container: textContainer } = createTextContainer(label.elements.text);
+    textContainer.textContent = label.text;
+    labelDiv.appendChild(textWrapper);
+  }
 
-  const { wrapper: productWrapper, container: productContainer } = createTextContainer(label.elements.productName);
-  productContainer.textContent = label.productName;
-  labelDiv.appendChild(productWrapper);
+  if (label.elements.companyName.enabled) {
+    const { wrapper: companyWrapper, container: companyContainer } = createTextContainer(label.elements.companyName);
+    companyContainer.textContent = label.companyName;
+    labelDiv.appendChild(companyWrapper);
+  }
+
+  if (label.elements.productName.enabled) {
+    const { wrapper: productWrapper, container: productContainer } = createTextContainer(label.elements.productName);
+    productContainer.textContent = label.productName;
+    labelDiv.appendChild(productWrapper);
+  }
 
   return labelDiv;
 };

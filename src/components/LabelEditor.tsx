@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import QRCode from 'qrcode.react';
-import { Move, QrCode, Type, Building, Package, Settings, Text } from 'lucide-react';
-import type { Label, LabelElements, ElementStyle, Position, TextStyle, ElementValidation, ValidationError } from '../types';
+import { Move, QrCode, Type, Building, Package, Settings, Ruler, Grid } from 'lucide-react';
+import type { Label, LabelElements, ElementStyle, Position, TextStyle } from '../types';
 import { getScaleFactor, constrainPosition, findNonOverlappingPosition } from '../utils';
+import { ElementControls } from './ElementControls';
 
 interface LabelEditorProps {
   label: Label;
@@ -16,22 +17,8 @@ interface LabelEditorProps {
   showNextButton?: boolean;
 }
 
-interface PositionInputs {
-  [key: string]: {
-    x: string;
-    y: string;
-  };
-}
-
-interface ElementControlsProps {
-  element: keyof LabelElements;
-  icon: React.ReactNode;
-  label: string;
-  showTextControls?: boolean;
-}
-
-export function LabelEditor({ 
-  label, 
+export function LabelEditor({
+  label,
   onUpdate,
   onUpdateCompanyName,
   onUpdateText,
@@ -39,230 +26,90 @@ export function LabelEditor({
   onUpdateUuidLength,
   onClose,
   onNext,
-  showNextButton = false 
+  showNextButton = false
 }: LabelEditorProps) {
   const [elements, setElements] = useState<LabelElements>(label.elements);
-  const [padding, setPadding] = useState(label.size.padding);
-  const [elementSpacing, setElementSpacing] = useState(label.size.elementSpacing || 1);
+  const [padding, setPadding] = useState(0);
+  const [elementSpacing, setElementSpacing] = useState(0);
+  const [isPaddingEnabled, setIsPaddingEnabled] = useState(false);
+  const [isSpacingEnabled, setIsSpacingEnabled] = useState(false);
   const [activeTab, setActiveTab] = useState<'layout' | 'settings'>('layout');
-  const [validation, setValidation] = useState<Record<keyof LabelElements, ElementValidation>>({
-    qrCode: { position: { x: null, y: null }, size: null },
-    uuid: { position: { x: null, y: null }, size: null },
-    companyName: { position: { x: null, y: null }, size: null },
-    productName: { position: { x: null, y: null }, size: null },
-    text: { position: { x: null, y: null }, size: null }
-  });
-
-  const [positionInputs, setPositionInputs] = useState<PositionInputs>(() => {
-    const inputs: PositionInputs = {};
-    Object.entries(elements).forEach(([key, element]) => {
-      inputs[key] = {
-        x: element.position.x.toString(),
-        y: element.position.y.toString()
-      };
-    });
-    return inputs;
-  });
-  
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [draggingElement, setDraggingElement] = useState<keyof LabelElements | null>(null);
   const [showSaveCancel, setShowSaveCancel] = useState(false);
   const [selectedElement, setSelectedElement] = useState<keyof LabelElements | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [draggingElement, setDraggingElement] = useState<keyof LabelElements | null>(null);
   const [startDragPos, setStartDragPos] = useState({ x: 0, y: 0 });
   const [elementStartPos, setElementStartPos] = useState<Position>({ x: 0, y: 0 });
 
+  const editorRef = useRef<HTMLDivElement>(null);
   const scale = getScaleFactor(label.size.unit);
 
   useEffect(() => {
     setElements(label.elements);
-    setPositionInputs(() => {
-      const inputs: PositionInputs = {};
-      Object.entries(label.elements).forEach(([key, element]) => {
-        inputs[key] = {
-          x: element.position.x.toString(),
-          y: element.position.y.toString()
-        };
-      });
-      return inputs;
-    });
+    setPadding(0);
+    setElementSpacing(0);
+    setIsPaddingEnabled(false);
+    setIsSpacingEnabled(false);
   }, [label.elements]);
 
-  const validateInput = (
-    value: number,
-    min: number,
-    max: number,
-    field: string
-  ): ValidationError | null => {
-    if (value < min) {
-      return {
-        message: `${field} must be at least ${min}`,
-        min,
-        max
-      };
-    }
-    if (value > max) {
-      return {
-        message: `${field} cannot exceed ${max}`,
-        min,
-        max
-      };
-    }
-    return null;
-  };
-
-  const handlePositionInputChange = (
-    value: string,
-    element: keyof LabelElements,
-    axis: 'x' | 'y'
-  ) => {
-    setPositionInputs(prev => ({
-      ...prev,
-      [element]: {
-        ...prev[element],
-        [axis]: value
-      }
-    }));
-
-    const num = parseFloat(value);
-    if (!isNaN(num)) {
-      const maxPos = axis === 'x' ? label.size.width : label.size.height;
-      const error = validateInput(num, 0, maxPos, axis === 'x' ? 'X position' : 'Y position');
-
-      setValidation(prev => ({
-        ...prev,
-        [element]: {
-          ...prev[element],
-          position: {
-            ...prev[element].position,
-            [axis]: error
-          }
-        }
-      }));
-
-      updateElementPosition(element, { [axis]: num });
-    }
-  };
-
-  const handlePositionInputBlur = (
-    element: keyof LabelElements,
-    axis: 'x' | 'y'
-  ) => {
-    const value = positionInputs[element][axis];
-    const num = parseFloat(value);
-    
-    if (isNaN(num)) {
-      setPositionInputs(prev => ({
-        ...prev,
-        [element]: {
-          ...prev[element],
-          [axis]: elements[element].position[axis].toString()
-        }
-      }));
-      return;
-    }
-
-    const maxPos = axis === 'x' ? label.size.width : label.size.height;
-    const error = validateInput(num, 0, maxPos, axis === 'x' ? 'X position' : 'Y position');
-
-    if (error) {
-      setPositionInputs(prev => ({
-        ...prev,
-        [element]: {
-          ...prev[element],
-          [axis]: elements[element].position[axis].toString()
-        }
-      }));
-    }
-
-    setValidation(prev => ({
-      ...prev,
-      [element]: {
-        ...prev[element],
-        position: {
-          ...prev[element].position,
-          [axis]: error
-        }
-      }
-    }));
-  };
-
-  const handleSizeInputChange = (
-    value: string,
-    element: keyof LabelElements
-  ) => {
-    const num = parseFloat(value);
-    if (!isNaN(num)) {
-      const error = validateInput(
-        num,
-        element === 'qrCode' ? 20 : 8,
-        element === 'qrCode' ? 200 : 72,
-        'Size'
-      );
-
-      setValidation(prev => ({
-        ...prev,
-        [element]: {
-          ...prev[element],
-          size: error
-        }
-      }));
-
-      updateElementSize(element, num);
-    }
-  };
-
-  const updateElementPosition = (element: keyof LabelElements, position: Partial<Position>) => {
+  const handleElementUpdate = (elementKey: keyof LabelElements, updates: Partial<ElementStyle>) => {
     const updatedElements = { ...elements };
-    const currentElement = updatedElements[element];
-    const otherElements = Object.entries(updatedElements)
-      .filter(([key]) => key !== element)
-      .map(([, value]) => value);
-
-    const newPosition = constrainPosition(
-      { ...currentElement.position, ...position },
-      currentElement.size,
-      { ...label.size, padding, elementSpacing },
-      currentElement.width
-    );
-
-    const finalPosition = findNonOverlappingPosition(
-      { ...currentElement, position: newPosition },
-      otherElements,
-      { ...label.size, padding, elementSpacing },
-      scale
-    );
-
-    updatedElements[element] = {
-      ...currentElement,
-      position: finalPosition
-    };
-
-    setElements(updatedElements);
-    setShowSaveCancel(true);
-  };
-
-  const updateElementSize = (element: keyof LabelElements, size: number) => {
-    const updatedElements = { ...elements };
-    updatedElements[element] = { ...updatedElements[element], size };
-    setElements(updatedElements);
-    setShowSaveCancel(true);
-  };
-
-  const updateElementEnabled = (element: keyof LabelElements, enabled: boolean) => {
-    const updatedElements = { ...elements };
-    updatedElements[element] = { ...updatedElements[element], enabled };
-    setElements(updatedElements);
-    setShowSaveCancel(true);
-  };
-
-  const updateTextStyle = (element: 'companyName' | 'productName' | 'text', textStyle: Partial<TextStyle>) => {
-    const updatedElements = { ...elements };
-    updatedElements[element] = {
-      ...updatedElements[element],
-      textStyle: { ...updatedElements[element].textStyle, ...textStyle }
+    updatedElements[elementKey] = {
+      ...updatedElements[elementKey],
+      ...updates
     };
     setElements(updatedElements);
+    setShowSaveCancel(true);
+  };
+
+  const handleElementColorUpdate = (element: keyof LabelElements, color: string) => {
+    const updatedElements = { ...elements };
+    if ('textStyle' in updatedElements[element]) {
+      (updatedElements[element] as ElementStyle & { textStyle: TextStyle }).textStyle.color = color;
+    } else {
+      (updatedElements[element] as ElementStyle).color = color;
+    }
+    setElements(updatedElements);
+    setShowSaveCancel(true);
+  };
+
+  const handleTextStyleUpdate = (element: keyof LabelElements, textStyle: Partial<TextStyle>) => {
+    const updatedElements = { ...elements };
+    if ('textStyle' in updatedElements[element]) {
+      (updatedElements[element] as ElementStyle & { textStyle: TextStyle }).textStyle = {
+        ...(updatedElements[element] as ElementStyle & { textStyle: TextStyle }).textStyle,
+        ...textStyle
+      };
+      setElements(updatedElements);
+      setShowSaveCancel(true);
+    }
+  };
+
+  const handlePaddingChange = (value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0) {
+      setPadding(numValue);
+      setShowSaveCancel(true);
+    }
+  };
+
+  const handleSpacingChange = (value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0) {
+      setElementSpacing(numValue);
+      setShowSaveCancel(true);
+    }
+  };
+
+  const handlePaddingToggle = (enabled: boolean) => {
+    setIsPaddingEnabled(enabled);
+    setPadding(enabled ? 5 : 0);
+    setShowSaveCancel(true);
+  };
+
+  const handleSpacingToggle = (enabled: boolean) => {
+    setIsSpacingEnabled(enabled);
+    setElementSpacing(enabled ? 1 : 0);
     setShowSaveCancel(true);
   };
 
@@ -288,18 +135,24 @@ export function LabelEditor({
     const deltaX = (e.clientX - rect.left - startDragPos.x) / scale;
     const deltaY = (e.clientY - rect.top - startDragPos.y) / scale;
 
-    updateElementPosition(draggingElement, {
-      x: elementStartPos.x + deltaX,
-      y: elementStartPos.y + deltaY
-    });
+    const updatedElements = { ...elements };
+    const newPosition = constrainPosition(
+      {
+        x: elementStartPos.x + deltaX,
+        y: elementStartPos.y + deltaY
+      },
+      elements[draggingElement].size,
+      { ...label.size, padding, elementSpacing },
+      elements[draggingElement].width
+    );
 
-    setPositionInputs(prev => ({
-      ...prev,
-      [draggingElement]: {
-        x: (elementStartPos.x + deltaX).toString(),
-        y: (elementStartPos.y + deltaY).toString()
-      }
-    }));
+    updatedElements[draggingElement] = {
+      ...updatedElements[draggingElement],
+      position: newPosition
+    };
+
+    setElements(updatedElements);
+    setShowSaveCancel(true);
   };
 
   const handleMouseUp = () => {
@@ -308,18 +161,6 @@ export function LabelEditor({
   };
 
   const handleSave = () => {
-    const hasErrors = Object.values(validation).some(
-      elementValidation =>
-        elementValidation.position.x !== null ||
-        elementValidation.position.y !== null ||
-        elementValidation.size !== null
-    );
-
-    if (hasErrors) {
-      alert('Please fix all validation errors before saving');
-      return;
-    }
-
     onUpdate({ 
       ...label, 
       elements, 
@@ -345,193 +186,6 @@ export function LabelEditor({
     if (onClose) {
       onClose();
     }
-  };
-
-  const renderElement = (
-    element: keyof LabelElements,
-    content: React.ReactNode,
-    style: React.CSSProperties
-  ) => {
-    const elementStyle = elements[element];
-    if (!elementStyle.enabled) return null;
-
-    const isSelected = selectedElement === element;
-    const isDragging = draggingElement === element;
-
-    return (
-      <div 
-        className={`absolute cursor-move select-none ${
-          isSelected || isDragging ? 'z-10' : ''
-        }`}
-        style={{
-          ...style,
-          left: `${elementStyle.position.x * scale}px`,
-          top: `${elementStyle.position.y * scale}px`,
-          padding: '8px',
-          margin: '-8px',
-          borderRadius: '4px',
-          background: isSelected || isDragging ? 'rgba(255, 255, 255, 0.95)' : 'transparent',
-          boxShadow: isSelected || isDragging ? 
-            '0 0 0 2px #3b82f6, 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 6px rgba(59, 130, 246, 0.1)' : 
-            'none',
-          transition: 'all 0.2s ease'
-        }}
-        onMouseDown={(e) => handleMouseDown(e, element)}
-        onClick={(e) => {
-          e.stopPropagation();
-          setSelectedElement(isSelected ? null : element);
-        }}
-      >
-        <div 
-          style={{
-            position: 'relative',
-            borderRadius: '3px',
-            padding: '2px'
-          }}
-        >
-          {content}
-        </div>
-      </div>
-    );
-  };
-
-  const ElementControls = ({ 
-    element, 
-    icon, 
-    label: elementLabel,
-    showTextControls = false 
-  }: ElementControlsProps) => {
-    const elementStyle = elements[element];
-    const isSelected = selectedElement === element;
-    
-    return (
-      <div className={`bg-gray-50 dark:bg-gray-800 p-4 rounded-lg ${isSelected ? 'ring-2 ring-blue-500' : ''}`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            {icon}
-            <h3 className="font-medium text-gray-900 dark:text-gray-100">{elementLabel}</h3>
-          </div>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={elementStyle.enabled}
-              onChange={(e) => updateElementEnabled(element, e.target.checked)}
-              className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 dark:bg-gray-700"
-            />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Enable</span>
-          </label>
-        </div>
-
-        {elementStyle.enabled && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  X Position ({label.size.unit})
-                  {validation[element].position.x && (
-                    <span className="text-red-500 text-xs ml-1">
-                      {validation[element].position.x.message}
-                    </span>
-                  )}
-                </label>
-                <input
-                  type="number"
-                  value={positionInputs[element].x}
-                  onChange={(e) => handlePositionInputChange(e.target.value, element, 'x')}
-                  onBlur={() => handlePositionInputBlur(element, 'x')}
-                  step="0.01"
-                  className={`mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 ${
-                    validation[element].position.x ? 'border-red-500' : ''
-                  }`}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Y Position ({label.size.unit})
-                  {validation[element].position.y && (
-                    <span className="text-red-500 text-xs ml-1">
-                      {validation[element].position.y.message}
-                    </span>
-                  )}
-                </label>
-                <input
-                  type="number"
-                  value={positionInputs[element].y}
-                  onChange={(e) => handlePositionInputChange(e.target.value, element, 'y')}
-                  onBlur={() => handlePositionInputBlur(element, 'y')}
-                  step="0.01"
-                  className={`mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 ${
-                    validation[element].position.y ? 'border-red-500' : ''
-                  }`}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Size {element === 'qrCode' ? '(px)' : '(pt)'}
-                {validation[element].size && (
-                  <span className="text-red-500 text-xs ml-1">
-                    {validation[element].size.message}
-                  </span>
-                )}
-              </label>
-              <input
-                type="number"
-                value={elementStyle.size}
-                onChange={(e) => handleSizeInputChange(e.target.value, element)}
-                className={`mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 ${
-                  validation[element].size ? 'border-red-500' : ''
-                }`}
-              />
-            </div>
-            {showTextControls && 'textStyle' in elementStyle && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Text Alignment</label>
-                  <select
-                    value={elementStyle.textStyle.align}
-                    onChange={(e) => updateTextStyle(element as 'companyName' | 'productName' | 'text', { 
-                      align: e.target.value as TextStyle['align']
-                    })}
-                    className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
-                  >
-                    <option value="left">Left</option>
-                    <option value="center">Center</option>
-                    <option value="right">Right</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={elementStyle.textStyle.multiline}
-                      onChange={(e) => updateTextStyle(element as 'companyName' | 'productName' | 'text', { 
-                        multiline: e.target.checked
-                      })}
-                      className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 dark:bg-gray-700"
-                    />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Enable Multiline</span>
-                  </label>
-                </div>
-                {elementStyle.textStyle.multiline && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Max Width ({label.size.unit})</label>
-                    <input
-                      type="number"
-                      value={elementStyle.textStyle.maxWidth || elementStyle.width || elementStyle.size}
-                      onChange={(e) => updateTextStyle(element as 'companyName' | 'productName' | 'text', { 
-                        maxWidth: Number(e.target.value)
-                      })}
-                      className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
-                    />
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (
@@ -562,14 +216,6 @@ export function LabelEditor({
                 Settings
               </button>
             </div>
-            {!showSaveCancel && !showNextButton && (
-              <button
-                onClick={onClose}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                ×
-              </button>
-            )}
           </div>
         </div>
 
@@ -590,172 +236,186 @@ export function LabelEditor({
                   }}
                   onClick={() => setSelectedElement(null)}
                 >
-                  {renderElement(
-                    'qrCode',
-                    <QRCode value={`${label.prefix}${label.uuid}`} size={elements.qrCode.size} />,
-                    { fontSize: `${elements.qrCode.size}px` }
-                  )}
-                  
-                  {renderElement(
-                    'uuid',
-                    <p className="text-gray-600">{label.shortUuid}</p>,
-                    { fontSize: `${elements.uuid.size}px` }
-                  )}
-                  
-                  {renderElement(
-                    'text',
-                    <p 
-                      className="font-bold whitespace-pre-wrap"
-                      style={{ 
-                        textAlign: elements.text.textStyle.align,
-                        maxWidth: elements.text.textStyle.maxWidth ? 
-                          `${elements.text.textStyle.maxWidth * scale}px` : 
-                          undefined
-                      }}
-                    >
-                      {label.text}
-                    </p>,
-                    { fontSize: `${elements.text.size}px` }
-                  )}
-                  
-                  {renderElement(
-                    'companyName',
-                    <p 
-                      className="font-bold whitespace-pre-wrap"
-                      style={{ 
-                        textAlign: elements.companyName.textStyle.align,
-                        maxWidth: elements.companyName.textStyle.maxWidth ? 
-                          `${elements.companyName.textStyle.maxWidth * scale}px` : 
-                          undefined
-                      }}
-                    >
-                      {label.companyName}
-                    </p>,
-                    { fontSize: `${elements.companyName.size}px` }
-                  )}
-                  
-                  {renderElement(
-                    'productName',
-                    <p 
-                      className="font-bold whitespace-pre-wrap"
-                      style={{ 
-                        textAlign: elements.productName.textStyle.align,
-                        maxWidth: elements.productName.textStyle.maxWidth ? 
-                          `${elements.productName.textStyle.maxWidth * scale}px` : 
-                          undefined
-                      }}
-                    >
-                      {label.productName}
-                    </p>,
-                    { fontSize: `${elements.productName.size}px` }
-                  )}
+                  {Object.entries(elements).map(([key, element]) => {
+                    if (!element.enabled) return null;
+                    const isSelected = selectedElement === key;
+                    const isDragging = draggingElement === key;
+
+                    return (
+                      <div
+                        key={key}
+                        className={`absolute cursor-move select-none ${isSelected || isDragging ? 'z-10' : ''}`}
+                        style={{
+                          left: `${element.position.x * scale}px`,
+                          top: `${element.position.y * scale}px`,
+                          padding: '8px',
+                          margin: '-8px',
+                          borderRadius: '4px',
+                          background: isSelected || isDragging ? 'rgba(255, 255, 255, 0.95)' : 'transparent',
+                          boxShadow: isSelected || isDragging ? 
+                            '0 0 0 2px #3b82f6, 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 6px rgba(59, 130, 246, 0.1)' : 
+                            'none',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseDown={(e) => handleMouseDown(e, key as keyof LabelElements)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedElement(isSelected ? null : key as keyof LabelElements);
+                        }}
+                      >
+                        {key === 'qrCode' && (
+                          <QRCode
+                            value={`${label.prefix}${label.uuid}`}
+                            size={element.size}
+                            fgColor={element.color || '#000000'}
+                          />
+                        )}
+                        {key === 'uuid' && (
+                          <p style={{ 
+                            fontSize: `${element.size}px`,
+                            color: element.color || '#000000'
+                          }}>
+                            {label.shortUuid}
+                          </p>
+                        )}
+                        {(key === 'text' || key === 'companyName' || key === 'productName') && (
+                          <p style={{ 
+                            fontSize: `${element.size}px`,
+                            color: (element as ElementStyle & { textStyle: TextStyle }).textStyle.color || '#000000',
+                            textAlign: (element as ElementStyle & { textStyle: TextStyle }).textStyle.align,
+                            whiteSpace: (element as ElementStyle & { textStyle: TextStyle }).textStyle.multiline ? 'pre-wrap' : 'nowrap',
+                            maxWidth: (element as ElementStyle & { textStyle: TextStyle }).textStyle.maxWidth ? 
+                              `${(element as ElementStyle & { textStyle: TextStyle }).textStyle.maxWidth}px` : 
+                              undefined
+                          }}>
+                            {key === 'text' ? label.text :
+                             key === 'companyName' ? label.companyName :
+                             label.productName}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
           </div>
 
           <div className="w-[400px] overflow-y-auto pr-2" style={{ marginRight: '-0.5rem' }}>
-            <div className="space-y-4 pr-2">
+            <div className="space-y-4">
               {activeTab === 'layout' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Border Padding ({label.size.unit})
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          value={padding}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === '' || !isNaN(parseFloat(value))) {
-                              setPadding(value === '' ? 0 : parseFloat(value));
-                              setShowSaveCancel(true);
-                            }
-                          }}
-                          min={0}
-                          step="0.1"
-                          className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
-                        />
-                        <label className="flex items-center gap-2">
+                <>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
+                      <div className="p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Ruler className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Border Padding</span>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isPaddingEnabled}
+                              onChange={(e) => handlePaddingToggle(e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                        {isPaddingEnabled && (
                           <input
-                            type="checkbox"
-                            checked={padding === 0}
-                            onChange={(e) => {
-                              setPadding(e.target.checked ? 0 : 1);
-                              setShowSaveCancel(true);
-                            }}
-                            className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 dark:bg-gray-700"
+                            type="number"
+                            value={padding}
+                            onChange={(e) => handlePaddingChange(e.target.value)}
+                            min="0"
+                            step="0.1"
+                            className="mt-2 w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                           />
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Disable</span>
-                        </label>
+                        )}
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Element Spacing ({label.size.unit})
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          value={elementSpacing}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === '' || !isNaN(parseFloat(value))) {
-                              setElementSpacing(value === '' ? 0 : parseFloat(value));
-                              setShowSaveCancel(true);
-                            }
-                          }}
-                          min={0}
-                          step="0.1"
-                          className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
-                        />
-                        <label className="flex items-center gap-2">
+                      <div className="p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Grid className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Element Spacing</span>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isSpacingEnabled}
+                              onChange={(e) => handleSpacingToggle(e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                        {isSpacingEnabled && (
                           <input
-                            type="checkbox"
-                            checked={elementSpacing === 0}
-                            onChange={(e) => {
-                              setElementSpacing(e.target.checked ? 0 : 1);
-                              setShowSaveCancel(true);
-                            }}
-                            className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 dark:bg-gray-700"
+                            type="number"
+                            value={elementSpacing}
+                            onChange={(e) => handleSpacingChange(e.target.value)}
+                            min="0"
+                            step="0.1"
+                            className="mt-2 w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                           />
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Disable</span>
-                        </label>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  <ElementControls 
-                    element="qrCode" 
-                    icon={<QrCode className="w-5 h-5" />} 
-                    label="QR Code" 
+                  <ElementControls
+                    element={elements.qrCode}
+                    icon={<QrCode className="w-5 h-5" />}
+                    label="QR Code"
+                    onUpdateColor={(color) => handleElementColorUpdate('qrCode', color)}
+                    onUpdatePosition={(position) => handleElementUpdate('qrCode', { position })}
+                    onUpdateSize={(size) => handleElementUpdate('qrCode', { size })}
+                    onUpdateEnabled={(enabled) => handleElementUpdate('qrCode', { enabled })}
                   />
-                  <ElementControls 
-                    element="uuid" 
-                    icon={<Type className="w-5 h-5" />} 
-                    label="UUID Text" 
+                  <ElementControls
+                    element={elements.uuid}
+                    icon={<Type className="w-5 h-5" />}
+                    label="UUID"
+                    onUpdateColor={(color) => handleElementColorUpdate('uuid', color)}
+                    onUpdatePosition={(position) => handleElementUpdate('uuid', { position })}
+                    onUpdateSize={(size) => handleElementUpdate('uuid', { size })}
+                    onUpdateEnabled={(enabled) => handleElementUpdate('uuid', { enabled })}
                   />
-                  <ElementControls 
-                    element="text" 
-                    icon={<Text className="w-5 h-5" />} 
-                    label="Custom Text" 
+                  <ElementControls
+                    element={elements.text}
+                    icon={<Type className="w-5 h-5" />}
+                    label="Custom Text"
                     showTextControls
+                    onUpdateColor={(color) => handleElementColorUpdate('text', color)}
+                    onUpdatePosition={(position) => handleElementUpdate('text', { position })}
+                    onUpdateSize={(size) => handleElementUpdate('text', { size })}
+                    onUpdateEnabled={(enabled) => handleElementUpdate('text', { enabled })}
+                    onUpdateTextStyle={(textStyle) => handleTextStyleUpdate('text', textStyle)}
                   />
-                  <ElementControls 
-                    element="companyName" 
-                    icon={<Building className="w-5 h-5" />} 
-                    label="Company Name" 
+                  <ElementControls
+                    element={elements.companyName}
+                    icon={<Building className="w-5 h-5" />}
+                    label="Company Name"
                     showTextControls
+                    onUpdateColor={(color) => handleElementColorUpdate('companyName', color)}
+                    onUpdatePosition={(position) => handleElementUpdate('companyName', { position })}
+                    onUpdateSize={(size) => handleElementUpdate('companyName', { size })}
+                    onUpdateEnabled={(enabled) => handleElementUpdate('companyName', { enabled })}
+                    onUpdateTextStyle={(textStyle) => handleTextStyleUpdate('companyName', textStyle)}
                   />
-                  <ElementControls 
-                    element="productName" 
-                    icon={<Package className="w-5 h-5" />} 
-                    label="Product Name" 
+                  <ElementControls
+                    element={elements.productName}
+                    icon={<Package className="w-5 h-5" />}
+                    label="Product Name"
                     showTextControls
+                    onUpdateColor={(color) => handleElementColorUpdate('productName', color)}
+                    onUpdatePosition={(position) => handleElementUpdate('productName', { position })}
+                    onUpdateSize={(size) => handleElementUpdate('productName', { size })}
+                    onUpdateEnabled={(enabled) => handleElementUpdate('productName', { enabled })}
+                    onUpdateTextStyle={(textStyle) => handleTextStyleUpdate('productName', textStyle)}
                   />
-                </div>
+                </>
               )}
 
               {activeTab === 'settings' && (
@@ -770,7 +430,7 @@ export function LabelEditor({
                           onUpdateCompanyName(e.target.value);
                           setShowSaveCancel(true);
                         }}
-                        className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                        className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-gray-700/50 border-gray-600 text-gray-100 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                   )}
@@ -784,7 +444,7 @@ export function LabelEditor({
                           onUpdateText(e.target.value);
                           setShowSaveCancel(true);
                         }}
-                        className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                        className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-gray-700/50 border-gray-600 text-gray-100 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                   )}
@@ -798,7 +458,7 @@ export function LabelEditor({
                           onUpdatePrefix(e.target.value);
                           setShowSaveCancel(true);
                         }}
-                        className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                        className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-gray-700/50 border-gray-600 text-gray-100 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                   )}
@@ -814,7 +474,7 @@ export function LabelEditor({
                         }}
                         min={4}
                         max={36}
-                        className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                        className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-gray-700/50 border-gray-600 text-gray-100 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                   )}

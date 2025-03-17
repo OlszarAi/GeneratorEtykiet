@@ -342,23 +342,23 @@ export function GeneratedLabels({
                         type="checkbox"
                         checked={editingState.selectedLabels.includes(label.id)}
                         onChange={() => toggleLabelSelection(label.id)}
-                        className="rounded border-gray-700 bg-gray-800 text-blue-500 focus:ring-blue-500"
+                        className="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-blue-500 focus:ring-blue-500"
                       />
-                      <span className="font-mono text-sm text-gray-400">
+                      <span className="font-mono text-sm text-gray-500 dark:text-gray-400">
                         {label.shortUuid}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => duplicateLabel(label)}
-                        className="p-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded-md transition-colors"
+                        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
                         title="Duplicate label"
                       >
                         <Copy className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => startEditing(label.id)}
-                        className="p-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded-md transition-colors"
+                        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
                         title="Edit label"
                       >
                         <Edit className="w-4 h-4" />
