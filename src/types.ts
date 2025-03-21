@@ -1,3 +1,5 @@
+import React from 'react';
+
 export interface Position {
   x: number;
   y: number;
@@ -8,18 +10,28 @@ export interface TextStyle {
   multiline: boolean;
   maxWidth?: number;
   color: string;
-  bold?: boolean;
-  italic?: boolean;
-  underline?: boolean;
+  lineHeight: number;
+  width?: number;
+  height?: number;
+  rotation: number;
 }
 
 export interface ElementStyle {
   position: Position;
   size: number;
   width?: number;
+  height?: number;
   textStyle?: TextStyle;
   enabled: boolean;
   color?: string;
+  isResizing?: boolean;
+  resizeDirection?: 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw' | null;
+  rotation: number;
+}
+
+export interface LogoStyle extends ElementStyle {
+  imageUrl?: string;
+  aspectRatio?: number;
 }
 
 export interface LabelSize {
@@ -29,6 +41,7 @@ export interface LabelSize {
   padding: number;
   elementSpacing: number;
   preventCollisions: boolean;
+  allowElementsOutside: boolean;
   border: {
     enabled: boolean;
     width: number;
@@ -42,6 +55,7 @@ export interface LabelElements {
   companyName: ElementStyle & { textStyle: TextStyle };
   productName: ElementStyle & { textStyle: TextStyle };
   text: ElementStyle & { textStyle: TextStyle };
+  logo: LogoStyle;
 }
 
 export interface Label {
@@ -84,6 +98,7 @@ export interface EditingState {
   isEditing: boolean;
   selectedLabels: string[];
   editingAll: boolean;
+  editingLabelId: string | null;
 }
 
 export interface ValidationError {

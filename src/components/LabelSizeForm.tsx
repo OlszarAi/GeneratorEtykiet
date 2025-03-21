@@ -46,13 +46,13 @@ export function LabelSizeForm({ labelSize, onUpdateLabelSize, onNext }: LabelSiz
                     onChange={(e) => onUpdateLabelSize({ ...labelSize, width: Number(e.target.value) })}
                     className="block w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 
                              focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white
-                             transition-all duration-200 ease-in-out"
+                             transition-all duration-200 ease-in-out pr-16"
                     min="0"
                     step="0.1"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                    {labelSize.unit}
-                  </span>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                    <span className="text-sm text-gray-400">{labelSize.unit}</span>
+                  </div>
                 </div>
               </div>
 
@@ -68,13 +68,13 @@ export function LabelSizeForm({ labelSize, onUpdateLabelSize, onNext }: LabelSiz
                     onChange={(e) => onUpdateLabelSize({ ...labelSize, height: Number(e.target.value) })}
                     className="block w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 
                              focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white
-                             transition-all duration-200 ease-in-out"
+                             transition-all duration-200 ease-in-out pr-16"
                     min="0"
                     step="0.1"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                    {labelSize.unit}
-                  </span>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                    <span className="text-sm text-gray-400">{labelSize.unit}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -116,11 +116,11 @@ export function LabelSizeForm({ labelSize, onUpdateLabelSize, onNext }: LabelSiz
                     step="0.1"
                     className="block w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 
                              focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white
-                             transition-all duration-200 ease-in-out"
+                             transition-all duration-200 ease-in-out pr-16"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                    {labelSize.unit}
-                  </span>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                    <span className="text-sm text-gray-400">{labelSize.unit}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -149,16 +149,16 @@ export function LabelSizeForm({ labelSize, onUpdateLabelSize, onNext }: LabelSiz
             <label className="flex items-center gap-3 p-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-500 transition-colors cursor-pointer">
               <input
                 type="checkbox"
-                checked={labelSize.preventCollisions || false}
+                checked={labelSize.allowElementsOutside || false}
                 onChange={(e) => onUpdateLabelSize({
                   ...labelSize,
-                  preventCollisions: e.target.checked
+                  allowElementsOutside: e.target.checked
                 })}
                 className="w-5 h-5 rounded-md border-2 border-gray-300 text-blue-500 focus:ring-blue-500 dark:border-gray-600"
               />
               <div>
-                <span className="font-medium text-gray-900 dark:text-gray-100">Prevent element overlapping</span>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Automatically adjust element positions to prevent overlapping</p>
+                <span className="font-medium text-gray-900 dark:text-gray-100">Allow elements outside label</span>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Enable this to allow elements to be moved outside the label boundaries</p>
               </div>
             </label>
 
@@ -168,22 +168,27 @@ export function LabelSizeForm({ labelSize, onUpdateLabelSize, onNext }: LabelSiz
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Border Width ({labelSize.unit})
                   </label>
-                  <input
-                    type="number"
-                    value={labelSize.border.width || 0}
-                    onChange={(e) => onUpdateLabelSize({
-                      ...labelSize,
-                      border: {
-                        ...labelSize.border,
-                        width: Number(e.target.value)
-                      }
-                    })}
-                    min={0.1}
-                    step={0.1}
-                    className="block w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 
-                             focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white
-                             transition-all duration-200 ease-in-out"
-                  />
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={labelSize.border.width || 0}
+                      onChange={(e) => onUpdateLabelSize({
+                        ...labelSize,
+                        border: {
+                          ...labelSize.border,
+                          width: Number(e.target.value)
+                        }
+                      })}
+                      min={0.1}
+                      step={0.1}
+                      className="block w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 
+                               focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white
+                               transition-all duration-200 ease-in-out pr-16"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                      <span className="text-sm text-gray-400">{labelSize.unit}</span>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

@@ -16,9 +16,10 @@ function App() {
     width: 100, 
     height: 50, 
     unit: 'mm',
-    padding: 5,
-    elementSpacing: 1,
+    padding: 0,
+    elementSpacing: 0,
     preventCollisions: false,
+    allowElementsOutside: false,
     border: {
       enabled: false,
       width: 0.3,
@@ -30,42 +31,64 @@ function App() {
     qrCode: { 
       position: { x: 10, y: 10 }, 
       size: 50,
-      enabled: true
+      enabled: false,
+      rotation: 0
     },
     uuid: { 
       position: { x: 10, y: 35 }, 
       size: 12,
-      enabled: true
+      enabled: false,
+      rotation: 0
     },
     text: {
       position: { x: 10, y: 25 },
       size: 14,
-      enabled: true,
+      enabled: false,
+      rotation: 0,
       textStyle: {
         align: 'left',
         multiline: false,
-        maxWidth: 80
+        maxWidth: 80,
+        color: '#000000',
+        rotation: 0,
+        lineHeight: 1.2
       }
     },
     companyName: { 
       position: { x: 10, y: 45 }, 
       size: 14,
-      enabled: true,
+      enabled: false,
+      rotation: 0,
       textStyle: {
         align: 'left',
         multiline: false,
-        maxWidth: 80
+        maxWidth: 80,
+        color: '#000000',
+        rotation: 0,
+        lineHeight: 1.2
       }
     },
     productName: { 
       position: { x: 70, y: 45 }, 
       size: 14,
-      enabled: true,
+      enabled: false,
+      rotation: 0,
       textStyle: {
         align: 'left',
         multiline: false,
-        maxWidth: 80
+        maxWidth: 80,
+        color: '#000000',
+        rotation: 0,
+        lineHeight: 1.2
       }
+    },
+    logo: {
+      position: { x: 60, y: 10 },
+      size: 40,
+      enabled: false,
+      rotation: 0,
+      imageUrl: undefined,
+      aspectRatio: undefined
     }
   });
   
@@ -101,11 +124,11 @@ function App() {
         size: labelSize,
         elements,
         companyName,
-        text,
         uuid: fullUuid,
         shortUuid,
         prefix,
-        productName: ''
+        productName: '',
+        text
       };
     });
     
@@ -153,11 +176,13 @@ function App() {
               onUpdate={(updatedLabel) => {
                 setElements(updatedLabel.elements);
                 setLabelSize(updatedLabel.size);
+                setCompanyName(updatedLabel.companyName);
+                setText(updatedLabel.text);
+                setPrefix(updatedLabel.prefix);
+                if (updatedLabel.shortUuid !== previewShortUuid) {
+                  setUuidLength(updatedLabel.shortUuid.length);
+                }
               }}
-              onUpdateCompanyName={setCompanyName}
-              onUpdateText={setText}
-              onUpdatePrefix={setPrefix}
-              onUpdateUuidLength={setUuidLength}
               onNext={() => setStep(3)}
               showNextButton
             />

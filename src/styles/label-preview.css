@@ -4,12 +4,21 @@
          dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_1px_3px_rgba(0,0,0,0.3),0_6px_16px_rgba(0,0,0,0.3)];
 }
 
-.label-preview-element {
-  @apply absolute font-bold text-gray-900 dark:text-gray-900;
+.label-element {
+  @apply absolute;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
 }
 
-.label-preview-text {
-  @apply whitespace-pre-wrap break-words text-gray-900 dark:text-gray-900;
+.label-element > div {
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  display: block;
+  white-space: pre;
+  letter-spacing: normal;
+  text-rendering: geometricPrecision;
 }
 
 .label-preview-qr {
@@ -17,5 +26,10 @@
 }
 
 .label-preview-uuid {
-  @apply font-mono text-gray-600 dark:text-gray-600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.label-preview-text {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 400;
 }

@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ElementColorPicker } from './ElementColorPicker';
-import type { ElementStyle, TextStyle } from '../types';
+import { RotationControl } from './RotationControl';
+import { Ruler, Image, ChevronDown, ChevronRight, MoveLeft } from 'lucide-react';
+import { LogoUploader } from './LogoUploader';
+import type { ElementStyle, TextStyle, LogoStyle } from '../types';
 
 interface ElementControlsProps {
-  element: ElementStyle & { textStyle?: TextStyle };
+  element: ElementStyle | LogoStyle;
   icon: React.ReactNode;
   label: string;
   showTextControls?: boolean;
@@ -12,6 +15,8 @@ interface ElementControlsProps {
   onUpdateSize: (size: number) => void;
   onUpdateEnabled: (enabled: boolean) => void;
   onUpdateTextStyle?: (textStyle: Partial<TextStyle>) => void;
+  onUpdateRotation?: (rotation: number) => void;
+  onUpdateLogo?: (updates: Partial<LogoStyle>) => void;
   unit?: string;
 }
 
@@ -25,42 +30,49 @@ export function ElementControls({
   onUpdateSize,
   onUpdateEnabled,
   onUpdateTextStyle,
+  onUpdateRotation,
+  onUpdateLogo,
   unit = 'mm'
 }: ElementControlsProps) {
-  // Local state for input values
-  const [xPosition, setXPosition] = useState(element.position.x.toString());
-  const [yPosition, setYPosition] = useState(element.position.y.toString());
-  const [size, setSize] = useState(element.size.toString());
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [inputValues, setInputValues] = useState({
+    x: element.position.x.toString(),
+    y: element.position.y.toString(),
+    size: element.size.toString()
+  });
 
-  // Update local state when element changes
+  const xInputRef = useRef<HTMLInputElement>(null);
+  const yInputRef = useRef<HTMLInputElement>(null);
+  const sizeInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-    setXPosition(element.position.x.toString());
-    setYPosition(element.position.y.toString());
-    setSize(element.size.toString());
-  }, [element]);
+    if (document.activeElement !== xInputRef.current) {
+      setInputValues(prev => ({ ...prev, x: element.position.x.toFixed(1) }));
+    }
+    if (document.activeElement !== yInputRef.current) {
+      setInputValues(prev => ({ ...prev, y: element.position.y.toFixed(1) }));
+    }
+    if (document.activeElement !== sizeInputRef.current) {
+      setInputValues(prev => ({ ...prev, size: element.size.toString() }));
+    }
+  }, [element.position.x, element.position.y, element.size]);
 
-  // Handle position changes
   const handlePositionChange = (axis: 'x' | 'y', value: string) => {
-    if (axis === 'x') {
-      setXPosition(value);
-      if (value === '') return;
-      const numValue = parseFloat(value);
-      if (!isNaN(numValue)) {
-        onUpdatePosition({ x: numValue, y: element.position.y });
-      }
-    } else {
-      setYPosition(value);
-      if (value === '') return;
-      const numValue = parseFloat(value);
-      if (!isNaN(numValue)) {
-        onUpdatePosition({ x: element.position.x, y: numValue });
-      }
+    setInputValues(prev => ({ ...prev, [axis]: value }));
+    
+    if (value === '') return;
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      onUpdatePosition({
+        x: axis === 'x' ? numValue : element.position.x,
+        y: axis === 'y' ? numValue : element.position.y
+      });
     }
   };
 
-  // Handle size changes
   const handleSizeChange = (value: string) => {
-    setSize(value);
+    setInputValues(prev => ({ ...prev, size: value }));
+    
     if (value === '') return;
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -68,141 +80,228 @@ export function ElementControls({
     }
   };
 
-  // Handle position blur
-  const handlePositionBlur = (axis: 'x' | 'y') => {
-    const value = axis === 'x' ? xPosition : yPosition;
+  const handleBlur = (field: 'x' | 'y' | 'size') => {
+    const value = inputValues[field];
     if (value === '' || isNaN(parseFloat(value))) {
-      if (axis === 'x') {
-        setXPosition(element.position.x.toString());
-      } else {
-        setYPosition(element.position.y.toString());
-      }
+      setInputValues(prev => ({
+        ...prev,
+        [field]: field === 'size' ? 
+          element.size.toString() : 
+          element.position[field as 'x' | 'y'].toFixed(1)
+      }));
     }
   };
 
-  // Handle size blur
-  const handleSizeBlur = () => {
-    if (size === '' || isNaN(parseFloat(size))) {
-      setSize(element.size.toString());
+  const handleEnableChange = (checked: boolean) => {
+    onUpdateEnabled(checked);
+    if (checked) {
+      setIsExpanded(true);
     }
   };
+
+  const handleMultilineToggle = (checked: boolean) => {
+    if (checked && onUpdateTextStyle) {
+      onUpdateTextStyle({
+        multiline: true,
+        width: element.width || element.size,
+        height: element.size,
+        lineHeight: 1.2
+      });
+    } else if (onUpdateTextStyle) {
+      onUpdateTextStyle({
+        multiline: false,
+        width: undefined,
+        height: undefined,
+        lineHeight: undefined
+      });
+    }
+  };
+
+  const handleResetPosition = () => {
+    onUpdatePosition({ x: 0, y: 0 });
+  };
+
+  const isLogo = 'imageUrl' in element;
 
   return (
     <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          {icon}
-          <h3 className="font-medium text-gray-900 dark:text-gray-100">{label}</h3>
-        </div>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-2 hover:text-blue-500 transition-colors"
+        >
+          {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          <div className="flex items-center gap-2">
+            {icon}
+            <h3 className="font-medium text-gray-900 dark:text-gray-100">{label}</h3>
+          </div>
+        </button>
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={element.enabled}
-            onChange={(e) => onUpdateEnabled(e.target.checked)}
+            onChange={(e) => handleEnableChange(e.target.checked)}
             className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 dark:bg-gray-700"
           />
           <span className="text-sm text-gray-600 dark:text-gray-400">Enable</span>
         </label>
       </div>
 
-      {element.enabled && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                X Position ({unit})
-              </label>
-              <input
-                type="number"
-                value={xPosition}
-                onChange={(e) => handlePositionChange('x', e.target.value)}
-                onBlur={() => handlePositionBlur('x')}
-                step="0.1"
-                className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Y Position ({unit})
-              </label>
-              <input
-                type="number"
-                value={yPosition}
-                onChange={(e) => handlePositionChange('y', e.target.value)}
-                onBlur={() => handlePositionBlur('y')}
-                step="0.1"
-                className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Size {label === 'QR Code' ? '(px)' : '(pt)'}
-            </label>
-            <input
-              type="number"
-              value={size}
-              onChange={(e) => handleSizeChange(e.target.value)}
-              onBlur={handleSizeBlur}
-              step="1"
-              min="1"
-              className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
+      {isExpanded && element.enabled && (
+        <div className="space-y-4 mt-4">
+          {isLogo && onUpdateLogo ? (
+            <LogoUploader
+              logo={element as LogoStyle}
+              onUpdateLogo={onUpdateLogo}
             />
-          </div>
+          ) : (
+            <>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Position ({unit})
+                  </label>
+                  <button
+                    onClick={handleResetPosition}
+                    className="flex items-center gap-1.5 px-2 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                    title="Reset position to 0,0"
+                  >
+                    <MoveLeft className="w-3.5 h-3.5" />
+                    <span>Reset</span>
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      X Position
+                    </label>
+                    <input
+                      ref={xInputRef}
+                      type="number"
+                      value={inputValues.x}
+                      onChange={(e) => handlePositionChange('x', e.target.value)}
+                      onBlur={() => handleBlur('x')}
+                      step="0.1"
+                      className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      Y Position
+                    </label>
+                    <input
+                      ref={yInputRef}
+                      type="number"
+                      value={inputValues.y}
+                      onChange={(e) => handlePositionChange('y', e.target.value)}
+                      onBlur={() => handleBlur('y')}
+                      step="0.1"
+                      className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
 
-          <ElementColorPicker
-            color={element.color || (element.textStyle?.color || '#000000')}
-            onChange={onUpdateColor}
-          />
-
-          {showTextControls && element.textStyle && onUpdateTextStyle && (
-            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Text Alignment
+                  Size {label === 'QR Code' ? '(px)' : '(pt)'}
                 </label>
-                <select
-                  value={element.textStyle.align}
-                  onChange={(e) => onUpdateTextStyle({ align: e.target.value as TextStyle['align'] })}
+                <input
+                  ref={sizeInputRef}
+                  type="number"
+                  value={inputValues.size}
+                  onChange={(e) => handleSizeChange(e.target.value)}
+                  onBlur={() => handleBlur('size')}
+                  step="1"
+                  min="1"
                   className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="left">Left</option>
-                  <option value="center">Center</option>
-                  <option value="right">Right</option>
-                </select>
+                />
               </div>
 
-              <div>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={element.textStyle.multiline}
-                    onChange={(e) => onUpdateTextStyle({ multiline: e.target.checked })}
-                    className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 dark:bg-gray-700"
-                  />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Enable Multiline
-                  </span>
-                </label>
-              </div>
+              <ElementColorPicker
+                color={element.color || (element.textStyle?.color || '#000000')}
+                onChange={onUpdateColor}
+              />
 
-              {element.textStyle.multiline && (
+              {showTextControls && element.textStyle && onUpdateTextStyle && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Text Alignment
+                    </label>
+                    <select
+                      value={element.textStyle.align}
+                      onChange={(e) => onUpdateTextStyle({ align: e.target.value as TextStyle['align'] })}
+                      className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="left">Left</option>
+                      <option value="center">Center</option>
+                      <option value="right">Right</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={element.textStyle.multiline}
+                        onChange={(e) => handleMultilineToggle(e.target.checked)}
+                        className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 dark:bg-gray-700"
+                      />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Enable Multiline & Resizing
+                      </span>
+                    </label>
+                  </div>
+
+                  {element.textStyle.multiline && (
+                    <>
+                      <div>
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <Ruler className="w-4 h-4" />
+                          Line Height
+                        </label>
+                        <input
+                          type="number"
+                          value={element.textStyle.lineHeight || 1.2}
+                          onChange={(e) => onUpdateTextStyle({ lineHeight: Number(e.target.value) })}
+                          step="0.1"
+                          min="1"
+                          max="3"
+                          className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <p>Hold Shift + drag edges to resize text box</p>
+                      </div>
+                    </>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Rotation
+                    </label>
+                    <RotationControl
+                      rotation={element.textStyle.rotation || 0}
+                      onChange={(rotation) => onUpdateTextStyle({ rotation })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {!showTextControls && onUpdateRotation && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Max Width ({unit})
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Rotation
                   </label>
-                  <input
-                    type="number"
-                    value={element.textStyle.maxWidth || element.width || element.size}
-                    onChange={(e) => onUpdateTextStyle({ maxWidth: Number(e.target.value) })}
-                    step="0.1"
-                    min="1"
-                    className="mt-1 block w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500"
+                  <RotationControl
+                    rotation={element.rotation || 0}
+                    onChange={onUpdateRotation}
                   />
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       )}

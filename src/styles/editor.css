@@ -37,3 +37,72 @@
 .editor-footer {
   @apply flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700;
 }
+
+.resizable-text {
+  @apply absolute cursor-move;
+  user-select: none;
+  transform-origin: center center;
+}
+
+.resizable-text.resizing {
+  @apply ring-2 ring-blue-500 ring-opacity-50;
+}
+
+.resizable-text:hover {
+  @apply ring-2 ring-blue-500/20;
+}
+
+.resizable-text:hover .resize-border {
+  @apply opacity-100;
+}
+
+.resize-border {
+  @apply absolute opacity-0 transition-opacity duration-200;
+  background-color: transparent;
+}
+
+.resize-border-n {
+  @apply top-0 left-0 right-0 h-1 cursor-ns-resize;
+}
+
+.resize-border-s {
+  @apply bottom-0 left-0 right-0 h-1 cursor-ns-resize;
+}
+
+.resize-border-e {
+  @apply top-0 right-0 bottom-0 w-1 cursor-ew-resize;
+}
+
+.resize-border-w {
+  @apply top-0 left-0 bottom-0 w-1 cursor-ew-resize;
+}
+
+.resize-corner {
+  @apply absolute w-3 h-3 opacity-0 transition-opacity duration-200;
+  background-color: transparent;
+}
+
+.resizable-text:hover .resize-corner {
+  @apply opacity-100;
+}
+
+.resize-corner-nw {
+  @apply top-0 left-0 cursor-nw-resize;
+}
+
+.resize-corner-ne {
+  @apply top-0 right-0 cursor-ne-resize;
+}
+
+.resize-corner-sw {
+  @apply bottom-0 left-0 cursor-sw-resize;
+}
+
+.resize-corner-se {
+  @apply bottom-0 right-0 cursor-se-resize;
+}
+
+.rotatable-element {
+  transform-origin: center center;
+  transition: transform 0.2s ease-in-out;
+}

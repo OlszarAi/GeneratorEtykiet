@@ -37,6 +37,10 @@ export const constrainPosition = (
   labelSize: LabelSize,
   elementWidth?: number
 ): Position => {
+  if (labelSize.allowElementsOutside) {
+    return position;
+  }
+
   const { width, height, padding } = labelSize;
   const elementW = elementWidth || elementSize;
   const effectivePadding = padding || 0;
@@ -64,7 +68,7 @@ export const findNonOverlappingPosition = (
   labelSize: LabelSize,
   scale: number
 ): Position => {
-  if (!labelSize.preventCollisions) {
+  if (!labelSize.preventCollisions || labelSize.allowElementsOutside) {
     return element.position;
   }
 
