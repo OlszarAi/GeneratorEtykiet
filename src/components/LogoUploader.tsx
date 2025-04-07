@@ -64,7 +64,8 @@ export function LogoUploader({ logo, onUpdateLogo }: LogoUploaderProps) {
         imageUrl: url,
         aspectRatio,
         width: newWidth,
-        height: newHeight
+        height: newHeight,
+        enabled: true // Automatically enable the logo when uploaded
       });
     };
     img.src = url;
@@ -91,7 +92,8 @@ export function LogoUploader({ logo, onUpdateLogo }: LogoUploaderProps) {
       aspectRatio: undefined,
       rotation: 0,
       width: logo.size,
-      height: logo.size
+      height: logo.size,
+      enabled: false // Disable the logo when removed
     });
     setDimensions({
       width: logo.size,
