@@ -1,14 +1,23 @@
-import React from 'react';
-import { Ruler, Square, Maximize, Grid } from 'lucide-react';
-import type { LabelSize } from '../types';
+import React, { useState } from 'react';
+import { Ruler, Square, Maximize, Grid, Upload } from 'lucide-react';
+import type { LabelSize, Label } from '../types';
+import { ImportLabelsModal } from './ImportLabelsModal';
 
 interface LabelSizeFormProps {
   labelSize: LabelSize;
   onUpdateLabelSize: (labelSize: LabelSize) => void;
   onNext: () => void;
+  onImportLabels: (labels: Label[]) => void;
 }
 
-export function LabelSizeForm({ labelSize, onUpdateLabelSize, onNext }: LabelSizeFormProps) {
+export function LabelSizeForm({ 
+  labelSize, 
+  onUpdateLabelSize, 
+  onNext,
+  onImportLabels 
+}: LabelSizeFormProps) {
+  const [showImportModal, setShowImportModal] = useState(false);
+
   return (
     <div className="relative overflow-hidden">
       {/* Background decoration */}
@@ -18,18 +27,27 @@ export function LabelSizeForm({ labelSize, onUpdateLabelSize, onNext }: LabelSiz
       
       <div className="relative backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
         <div className="p-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg">
-              <Ruler className="w-6 h-6" />
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg">
+                <Ruler className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Label Dimensions
+                </h2>
+                <p className="text-gray-500 dark:text-gray-400">
+                  Set the size and properties of your label
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Label Dimensions
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400">
-                Set the size and properties of your label
-              </p>
-            </div>
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Import Labels</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -104,7 +122,7 @@ export function LabelSizeForm({ labelSize, onUpdateLabelSize, onNext }: LabelSiz
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Border Padding
                 </label>
                 <div className="relative">
@@ -224,6 +242,13 @@ export function LabelSizeForm({ labelSize, onUpdateLabelSize, onNext }: LabelSiz
           </div>
         </div>
       </div>
+
+      {showImportModal && (
+        <ImportLabelsModal
+          onImport={onImportLabels}
+          onClose={() => setShowImportModal(false)}
+        />
+      )}
     </div>
   );
 }

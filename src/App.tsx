@@ -140,6 +140,16 @@ function App() {
     exportToPDF(selectedLabels, pdfSettings);
   };
 
+  const handleImportLabels = (importedLabels: Label[]) => {
+    setLabels(importedLabels);
+    // Set the first label's size as the current size
+    if (importedLabels.length > 0) {
+      setLabelSize(importedLabels[0].size);
+      setElements(importedLabels[0].elements);
+    }
+    setStep(4); // Go directly to the generated labels view
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 transition-colors">
       <div className="max-w-6xl mx-auto px-4">
@@ -156,7 +166,8 @@ function App() {
             <LabelSizeForm 
               labelSize={labelSize} 
               onUpdateLabelSize={setLabelSize} 
-              onNext={() => setStep(2)} 
+              onNext={() => setStep(2)}
+              onImportLabels={handleImportLabels}
             />
           )}
 
@@ -212,7 +223,6 @@ function App() {
               onUpdateLabels={setLabels}
               pdfSettings={pdfSettings}
               onUpdatePdfSettings={setPdfSettings}
-              onExportPdf={handleExportPDF}
               onRestart={() => setStep(1)}
             />
           )}

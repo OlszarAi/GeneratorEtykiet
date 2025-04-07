@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Edit, Download, Settings, Copy, Plus, Trash2, Search, X, CheckSquare, Square, ArrowLeft } from 'lucide-react';
+import { Edit, Download, Settings, Copy, Plus, Trash2, Search, X, CheckSquare, Square, ArrowLeft, Save, MoreVertical } from 'lucide-react';
 import type { Label, PDFSettings, EditingState } from '../types';
 import { LabelEditor } from './LabelEditor';
 import { PageSettingsModal } from './PageSettingsModal';
@@ -263,6 +263,24 @@ export function GeneratedLabels({
     }
   };
 
+  const handleExportLabels = () => {
+    const selectedLabels = editingState.selectedLabels.length > 0 
+      ? labels.filter(label => editingState.selectedLabels.includes(label.id))
+      : labels;
+
+    const dataStr = JSON.stringify(selectedLabels, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'labels.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const filteredLabels = searchTerm
     ? labels.filter(label => {
         const searchLower = searchTerm.toLowerCase();
@@ -278,112 +296,137 @@ export function GeneratedLabels({
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={onRestart}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                title="Create new labels"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium">New Labels</span>
-              </button>
-              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Generated Labels
-                </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm">
-                  {labels.length} labels
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
+        {/* Top Navigation Bar */}
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onRestart}
+              className="flex items-center gap-2 px-3 py-1.5 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="font-medium">Back</span>
+            </button>
+            <div className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Generated Labels
+            </h2>
+            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-sm rounded-md">
+              {labels.length} labels
+            </span>
+          </div>
+        </div>
+
+        {/* Main Toolbar */}
+        <div className="p-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex flex-wrap gap-3">
+            {/* Left Section - Selection & Edit Controls */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={toggleAllLabels}
-                className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 {editingState.selectedLabels.length === labels.length ? (
-                  <Square className="w-4 h-4 mr-2" />
+                  <Square className="w-4 h-4" />
                 ) : (
-                  <CheckSquare className="w-4 h-4 mr-2" />
+                  <CheckSquare className="w-4 h-4" />
                 )}
-                {editingState.selectedLabels.length === labels.length ? 'Deselect All' : 'Select All'}
+                <span className="text-sm">
+                  {editingState.selectedLabels.length === labels.length ? 'Deselect All' : 'Select All'}
+                </span>
               </button>
+
+              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
+
               <button
                 onClick={() => startEditing()}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
               >
-                <Edit className="w-4 h-4 mr-2" />
-                Edit All
+                <Edit className="w-4 h-4" />
+                <span className="text-sm">Edit All</span>
               </button>
+
               {editingState.selectedLabels.length > 0 && (
                 <>
                   <button
                     onClick={() => startEditing(editingState.selectedLabels[0])}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                   >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Selected ({editingState.selectedLabels.length})
+                    <Edit className="w-4 h-4" />
+                    <span className="text-sm">Edit Selected ({editingState.selectedLabels.length})</span>
                   </button>
+
                   <button
                     onClick={duplicateSelectedLabels}
-                    className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
                   >
-                    <Copy className="w-4 h-4 mr-2" />
-                    Duplicate ({editingState.selectedLabels.length})
+                    <Copy className="w-4 h-4" />
+                    <span className="text-sm">Duplicate ({editingState.selectedLabels.length})</span>
                   </button>
+
                   <button
                     onClick={deleteSelectedLabels}
-                    className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
+                    <Trash2 className="w-4 h-4" />
+                    <span className="text-sm">Delete</span>
                   </button>
                 </>
               )}
             </div>
           </div>
 
-          {/* Search and Export Controls */}
-          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          {/* Search & Export Controls */}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[240px] max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search labels..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-9 pr-4 py-1.5 text-sm rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            <div className="flex items-center gap-3">
-              <select
-                value={pdfSettings.type}
-                onChange={(e) => handlePdfTypeChange(e.target.value as 'single' | 'multiple')}
-                className="rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="single">One Label per Page</option>
-                <option value="multiple">Multiple Labels per Page</option>
-              </select>
-              {pdfSettings.type === 'multiple' && (
-                <button
-                  onClick={() => setShowPageSettings(true)}
-                  className="inline-flex items-center px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Page Settings
-                </button>
-              )}
+
+            <div className="flex items-center gap-2 ml-auto">
               <button
-                onClick={handleExportPdf}
-                className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                onClick={handleExportLabels}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Export to PDF
+                <Save className="w-4 h-4" />
+                <span className="text-sm">Export Labels</span>
               </button>
+
+              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
+
+              <div className="flex items-center gap-2">
+                <select
+                  value={pdfSettings.type}
+                  onChange={(e) => handlePdfTypeChange(e.target.value as 'single' | 'multiple')}
+                  className="px-3 py-1.5 text-sm rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="single">One Label per Page</option>
+                  <option value="multiple">Multiple Labels per Page</option>
+                </select>
+
+                {pdfSettings.type === 'multiple' && (
+                  <button
+                    onClick={() => setShowPageSettings(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span className="text-sm">Page Settings</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={handleExportPdf}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="text-sm">Export to PDF</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -400,7 +443,7 @@ export function GeneratedLabels({
                     : 'hover:ring-1 hover:ring-gray-200 dark:hover:ring-gray-700'
                 }`}
               >
-                <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+                <div className="p-3 border-b border-gray-200 dark:border-gray-800">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <input
@@ -413,17 +456,17 @@ export function GeneratedLabels({
                         {label.shortUuid}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => duplicateLabel(label)}
-                        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                        className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                         title="Duplicate label"
                       >
                         <Copy className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => startEditing(label.id)}
-                        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                        className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
                         title="Edit label"
                       >
                         <Edit className="w-4 h-4" />
@@ -434,7 +477,7 @@ export function GeneratedLabels({
                     type="text"
                     value={label.productName || ''}
                     onChange={(e) => handleProductNameChange(label.id, e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-1.5 text-sm rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter product name"
                   />
                 </div>
@@ -446,7 +489,6 @@ export function GeneratedLabels({
               </div>
             ))}
 
-            {/* Add New Label Button */}
             <button
               onClick={() => duplicateLabel(labels[0])}
               className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all"
