@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { Edit, Download, Settings, Copy, Plus, Trash2, Search, X, CheckSquare, Square, ArrowLeft } from 'lucide-react';
-import type { Label, PDFSettings, EditingState, PageSettings } from '../types';
+import type { Label, PDFSettings, EditingState } from '../types';
 import { LabelEditor } from './LabelEditor';
 import { PageSettingsModal } from './PageSettingsModal';
 import { LabelPreview } from './LabelPreview';
+import { ProgressIndicator } from './ProgressIndicator';
+import { usePdfExport } from '../hooks/usePdfExport';
 
 interface GeneratedLabelsProps {
   labels: Label[];
   onUpdateLabels: (labels: Label[]) => void;
   pdfSettings: PDFSettings;
   onUpdatePdfSettings: (settings: PDFSettings) => void;
-  onExportPdf: (selectedLabels: Label[]) => void;
   onRestart: () => void;
 }
 
@@ -19,7 +20,6 @@ export function GeneratedLabels({
   onUpdateLabels,
   pdfSettings,
   onUpdatePdfSettings,
-  onExportPdf,
   onRestart
 }: GeneratedLabelsProps) {
   const [editingState, setEditingState] = useState<EditingState>({
@@ -30,56 +30,115 @@ export function GeneratedLabels({
   });
   const [showPageSettings, setShowPageSettings] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const { exportToPDF, progress, cancelExport } = usePdfExport();
 
   const handleLabelUpdate = (updatedLabel: Label) => {
     const newLabels = labels.map(label => {
-      // Skip labels that aren't being edited
-      if (!editingState.editingAll && !editingState.selectedLabels.includes(label.id)) {
-        return label;
+      // If editing all labels
+      if (editingState.editingAll) {
+        return {
+          ...label,
+          elements: {
+            qrCode: {
+              ...updatedLabel.elements.qrCode,
+              position: label.elements.qrCode.position
+            },
+            uuid: {
+              ...updatedLabel.elements.uuid,
+              position: label.elements.uuid.position
+            },
+            text: {
+              ...updatedLabel.elements.text,
+              position: label.elements.text.position
+            },
+            companyName: {
+              ...updatedLabel.elements.companyName,
+              position: label.elements.companyName.position
+            },
+            productName: {
+              ...updatedLabel.elements.productName,
+              position: label.elements.productName.position
+            },
+            logo: {
+              ...updatedLabel.elements.logo,
+              position: label.elements.logo.position
+            }
+          },
+          size: updatedLabel.size,
+          companyName: updatedLabel.companyName,
+          text: updatedLabel.text,
+          prefix: updatedLabel.prefix,
+          shortUuid: label.uuid.substring(0, updatedLabel.shortUuid.length),
+          productName: label.productName // Preserve original product name
+        };
+      }
+      
+      // If editing selected labels
+      if (editingState.selectedLabels.includes(label.id) && !editingState.editingAll) {
+        // If this is the label being directly edited
+        if (label.id === updatedLabel.id) {
+          return {
+            ...updatedLabel,
+            productName: label.productName // Preserve original product name
+          };
+        }
+        
+        // For other selected labels
+        return {
+          ...label,
+          elements: {
+            qrCode: {
+              ...updatedLabel.elements.qrCode,
+              position: label.elements.qrCode.position
+            },
+            uuid: {
+              ...updatedLabel.elements.uuid,
+              position: label.elements.uuid.position
+            },
+            text: {
+              ...updatedLabel.elements.text,
+              position: label.elements.text.position
+            },
+            companyName: {
+              ...updatedLabel.elements.companyName,
+              position: label.elements.companyName.position
+            },
+            productName: {
+              ...updatedLabel.elements.productName,
+              position: label.elements.productName.position
+            },
+            logo: {
+              ...updatedLabel.elements.logo,
+              position: label.elements.logo.position
+            }
+          },
+          size: updatedLabel.size,
+          companyName: updatedLabel.companyName,
+          text: updatedLabel.text,
+          prefix: updatedLabel.prefix,
+          shortUuid: label.uuid.substring(0, updatedLabel.shortUuid.length),
+          productName: label.productName // Preserve original product name
+        };
+      }
+      
+      // If editing single label
+      if (label.id === updatedLabel.id && !editingState.editingAll && editingState.selectedLabels.length === 1) {
+        return {
+          ...updatedLabel,
+          productName: label.productName // Preserve original product name
+        };
       }
 
-      // For the label being directly edited, use its full update
-      if (label.id === updatedLabel.id) {
-        return updatedLabel;
-      }
-
-      // For other selected labels, apply the updates while preserving their unique properties
-      return {
-        ...label,
-        elements: {
-          qrCode: {
-            ...updatedLabel.elements.qrCode,
-            position: label.elements.qrCode.position
-          },
-          uuid: {
-            ...updatedLabel.elements.uuid,
-            position: label.elements.uuid.position
-          },
-          text: {
-            ...updatedLabel.elements.text,
-            position: label.elements.text.position
-          },
-          companyName: {
-            ...updatedLabel.elements.companyName,
-            position: label.elements.companyName.position
-          },
-          productName: {
-            ...updatedLabel.elements.productName,
-            position: label.elements.productName.position
-          },
-          logo: {
-            ...updatedLabel.elements.logo,
-            position: label.elements.logo.position
-          }
-        },
-        size: updatedLabel.size,
-        companyName: updatedLabel.companyName,
-        text: updatedLabel.text,
-        prefix: updatedLabel.prefix,
-        shortUuid: label.uuid.substring(0, updatedLabel.shortUuid.length)
-      };
+      return label;
     });
 
+    onUpdateLabels(newLabels);
+  };
+
+  const handleProductNameChange = (labelId: string, productName: string) => {
+    const newLabels = labels.map(label => 
+      label.id === labelId ? { ...label, productName } : label
+    );
     onUpdateLabels(newLabels);
   };
 
@@ -179,7 +238,7 @@ export function GeneratedLabels({
     const selectedLabels = editingState.selectedLabels.length > 0 
       ? labels.filter(label => editingState.selectedLabels.includes(label.id))
       : labels;
-    onExportPdf(selectedLabels);
+    exportToPDF(selectedLabels, pdfSettings);
   };
 
   const handlePdfTypeChange = (type: 'single' | 'multiple') => {
@@ -374,7 +433,7 @@ export function GeneratedLabels({
                   <input
                     type="text"
                     value={label.productName || ''}
-                    onChange={(e) => handleLabelUpdate({ ...label, productName: e.target.value })}
+                    onChange={(e) => handleProductNameChange(label.id, e.target.value)}
                     className="w-full px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter product name"
                   />
@@ -429,6 +488,14 @@ export function GeneratedLabels({
           onClose={() => setShowPageSettings(false)}
         />
       )}
+
+      <ProgressIndicator 
+        progress={progress.current}
+        total={progress.total}
+        estimatedTimeRemaining={progress.estimatedTimeRemaining}
+        isVisible={progress.isVisible}
+        onCancel={cancelExport}
+      />
     </div>
   );
 }
